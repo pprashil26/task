@@ -22,57 +22,31 @@ body {
   align-items: center;
 }
 
-/* Wrapper for textarea + highlight */
-.editor-wrapper {
-  position: relative;
+#taskInput {
   width: 92%;
   max-width: 480px;
-  margin-top: 14px;
-}
-
-/* Highlight layer behind textarea */
-#highlightLayer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
   min-height: 32vh;
   padding: 18px;
   font-size: 22px;
   line-height: 1.5;
   border-radius: 14px;
-  white-space: pre-wrap;
-  word-break: break-word;
+  background: #bbf7d0;
+  color: #3b2f2f;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  outline: none;
   overflow-wrap: break-word;
-  pointer-events: none;
-  font-family: inherit;
-  color: #3b2f2f; /* show highlighted text */
-  z-index: 1;
-}
-
-/* Textarea */
-#taskInput {
-  position: relative;
-  width: 100%;
-  min-height: 32vh;
-  padding: 18px;
-  font-size: 22px;
-  line-height: 1.5;
-  border-radius: 14px;
-  border: none;
-  background: transparent;
-  color: transparent;   /* hide actual text */
-  caret-color: #3b2f2f; /* caret visible */
-  font-family: inherit;
-  resize: none;
-  overflow: hidden;
-  z-index: 2;
+  word-break: break-word;
+  white-space: pre-wrap;
+  margin-top: 14px;
 }
 
 #taskInput:focus {
   outline: 2px solid #22c55e;
   outline-offset: 2px;
 }
+
+#taskInput.bold { font-weight: bold; }
+#taskInput.caps { text-transform: uppercase; }
 
 #charCount {
   width: 92%;
@@ -165,10 +139,7 @@ body {
 </head>
 <body>
 
-<div class="editor-wrapper">
-  <div id="highlightLayer"></div>
-  <textarea id="taskInput" maxlength="160" placeholder="Task description (use #tags inline)…"></textarea>
-</div>
+<div id="taskInput" contenteditable="true" placeholder="Task description (use #tags inline)…"></div>
 <div id="charCount">160</div>
 
 <div class="toolbar">
@@ -182,7 +153,6 @@ const taskInput = document.getElementById('taskInput');
 const charCount = document.getElementById('charCount');
 const addTaskBtn = document.getElementById('addTaskBtn');
 const taskList = document.getElementById('taskList');
-const highlightLayer = document.getElementById('highlightLayer');
 
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 
@@ -190,7 +160,7 @@ function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
-// Escape HTML to prevent injection
+// Escape HTML
 function escapeHTML(str) {
   return str.replace(/[&<>"']/g, m => ({
     '&':'&amp;',
@@ -201,9 +171,21 @@ function escapeHTML(str) {
   }[m]));
 }
 
-// Convert #tags into spans
+// Wrap #tags in span
 function parseTagsHTML(text) {
   return escapeHTML(text).replace(/(#\w+)/g, '<span class="tag">$1</span>');
+}
+
+// Live highlight inside contenteditable
+function updateLiveHighlight() {
+  let text = taskInput.innerText;
+  charCount.textContent = 160 - text.length;
+  let selection = window.getSelection();
+  let range = selection.getRangeAt(0);
+  taskInput.innerHTML = parseTagsHTML(text) || '';
+  // Restore caret position
+  selection.removeAllRanges();
+  selection.addRange(range);
 }
 
 function createTask(text) {
@@ -257,56 +239,22 @@ function renderTasks() {
   });
 }
 
-// Auto-grow textarea
-function autoGrow() {
-  taskInput.style.height = 'auto';
-  taskInput.style.height = taskInput.scrollHeight + 'px';
-  highlightLayer.style.height = taskInput.style.height;
-}
-
-// Update live highlight in textarea
-function updateHighlight() {
-  highlightLayer.innerHTML = parseTagsHTML(taskInput.value) || '<br>';
-}
-
-// Sync scroll
-taskInput.addEventListener('scroll', () => {
-  highlightLayer.scrollTop = taskInput.scrollTop;
-});
-
-// Update highlight on input
-taskInput.addEventListener('input', () => {
-  updateCharCount();
-  updateHighlight();
-  autoGrow();
-});
-
-function updateCharCount() {
-  charCount.textContent = 160 - taskInput.value.length;
-}
-
 function addTask() {
-  const text = taskInput.value.trim();
+  const text = taskInput.innerText.trim();
   if(!text) return;
   const newTask = createTask(text);
   tasks.unshift(newTask);
   saveTasks();
   renderTasks();
-  taskInput.value = '';
-  updateCharCount();
-  updateHighlight();
-  autoGrow();
-  taskInput.focus();
+  taskInput.innerText = '';
+  charCount.textContent = 160;
 }
 
+taskInput.addEventListener('input', updateLiveHighlight);
 addTaskBtn.onclick = addTask;
-taskInput.addEventListener('keydown', e => { if(e.key==='Enter') addTask(); });
 
 // Initialize
 renderTasks();
-autoGrow();
-updateCharCount();
-updateHighlight();
 </script>
 
 </body>
