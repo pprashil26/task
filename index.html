@@ -25,10 +25,10 @@ body {
 #taskInput {
   width: 92%;
   max-width: 480px;
-  padding: 20px 18px;       /* padding inside input */
-  font-size: 24px;           /* larger font for Minimal Text style */
-  line-height: 1.6;          /* more vertical spacing */
-  min-height: 60px;           /* ensures visible height */
+  padding: 24px 18px;     /* increased padding for visual height */
+  font-size: 24px;        /* bigger font */
+  line-height: 1.7;       /* more vertical spacing */
+  min-height: 64px;        /* ensures input is visually taller */
   border: none;
   border-radius: 14px;
   margin-top: 14px;
@@ -154,11 +154,12 @@ const taskList = document.getElementById('taskList');
 // Load tasks from localStorage
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 
+// Save tasks to localStorage
 function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
-// Escape HTML to prevent injection
+// Escape HTML for safety
 function escapeHTML(str) {
   return str.replace(/[&<>"']/g, m => ({
     '&':'&amp;',
@@ -174,6 +175,7 @@ function parseTagsHTML(text) {
   return escapeHTML(text).replace(/(#\w+)/g, '<span class="tag">$1</span>');
 }
 
+// Create new task object
 function createTask(text) {
   return {
     id: Date.now(),
@@ -184,6 +186,7 @@ function createTask(text) {
   };
 }
 
+// Render all tasks (existing & new)
 function renderTasks() {
   taskList.innerHTML = '';
   tasks.forEach(task => {
@@ -193,7 +196,7 @@ function renderTasks() {
 
     const span = document.createElement('span');
     span.className = 'task-text';
-    span.innerHTML = parseTagsHTML(task.text); // existing & new tasks both processed
+    span.innerHTML = parseTagsHTML(task.text); // applies to old & new tasks
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
@@ -225,6 +228,7 @@ function renderTasks() {
   });
 }
 
+// Add new task
 function addTask() {
   const text = taskInput.value.trim();
   if(!text) return;
@@ -251,7 +255,7 @@ function updateCharCount() {
   charCount.textContent = 160 - taskInput.value.length;
 }
 
-// Render tasks on page load, existing tasks will show highlighted tags
+// Initial render (existing tasks processed)
 renderTasks();
 </script>
 
