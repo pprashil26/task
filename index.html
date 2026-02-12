@@ -25,9 +25,9 @@ body {
 #taskInput {
   width: 92%;
   max-width: 480px;
-  padding: 20px 18px; /* adjusted padding */
-  font-size: 24px;    /* slightly bigger font to match Minimal Text */
-  line-height: 1.6;   /* adjusted line height */
+  padding: 22px 18px; /* adjusted for Minimal Text height */
+  font-size: 24px;    /* larger font for better visibility */
+  line-height: 1.6;   /* more vertical space for text */
   border: none;
   border-radius: 14px;
   margin-top: 14px;
@@ -156,7 +156,7 @@ function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
-// Convert #tags into span elements
+// Convert #tags into span elements for display
 function parseTagsHTML(text) {
   return text.replace(/(#\w+)/g, '<span class="tag">$1</span>');
 }
@@ -180,7 +180,7 @@ function renderTasks() {
 
     const span = document.createElement('span');
     span.className = 'task-text';
-    span.innerHTML = parseTagsHTML(task.text);
+    span.innerHTML = parseTagsHTML(task.text); // ensures existing & new tasks show highlighted tags
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
@@ -238,6 +238,7 @@ function updateCharCount() {
   charCount.textContent = 160 - taskInput.value.length;
 }
 
+// Initial rendering (existing tasks will now show highlighted tags)
 renderTasks();
 </script>
 
