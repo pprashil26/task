@@ -3,205 +3,153 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Minimal Task List</title>
-
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-512.png">
-<meta name="theme-color" content="#3b2f2f">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-
+<title>Task</title>
 <style>
-* { box-sizing: border-box; }
+  body {
+    font-family: monospace;
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 0 15px;
+  }
 
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #3b2f2f;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+  h1 {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
 
-#taskInput {
-  width: 92%;
-  max-width: 480px;
-  padding: 16px;
-  font-size: 20px;
-  border-radius: 14px;
-  border: none;
-  outline: none;
-  margin-top: 14px;
-  background: #bbf7d0;
-  color: #3b2f2f;
-}
+  input, select, button {
+    font-family: monospace;
+    font-size: 14px;
+  }
 
-#charCount {
-  width: 92%;
-  max-width: 480px;
-  text-align: right;
-  font-size: 12px;
-  color: #ddd;
-  margin-top: 4px;
-  margin-bottom: 6px;
-}
+  #taskInput {
+    width: 100%;
+    margin-bottom: 5px;
+  }
 
-.toolbar {
-  width: 92%;
-  max-width: 480px;
-  display: flex;
-  gap: 10px;
-  margin: 10px 0 6px;
-}
+  #tagsInput {
+    width: 100%;
+    margin-bottom: 10px;
+  }
 
-.toolbar button {
-  flex: 1;
-  padding: 8px 0;
-  font-size: 14px;
-  font-weight: 600;
-  border: none;
-  border-radius: 10px;
-  background: #4a3838;
-  color: #fff;
-}
+  ul {
+    list-style: none;
+    padding: 0;
+  }
 
-.toolbar button.active { background: #2563eb; }
+  li {
+    margin-bottom: 6px;
+  }
 
-.tasks {
-  width: 92%;
-  max-width: 480px;
-  margin-top: 10px;
-}
+  .completed span {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
 
-.task-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #4a3838;
-  padding: 10px;
-  border-radius: 10px;
-  margin-bottom: 6px;
-  font-size: 16px;
-  word-break: break-word;
-}
-
-.task-text.completed {
-  text-decoration: line-through;
-  opacity: 0.6;
-}
-
-.task-meta {
-  font-size: 11px;
-  color: #ccc;
-  margin-left: 6px;
-}
-
-.task-buttons button {
-  margin-left: 4px;
-  border: none;
-  border-radius: 6px;
-  padding: 4px 6px;
-  font-size: 12px;
-  background: #3b2f2f;
-  color: #fff;
-}
+  button {
+    margin-left: 5px;
+  }
 </style>
 </head>
 <body>
 
-<textarea id="taskInput" maxlength="160" placeholder="Enter task (max 160 chars)…"></textarea>
-<div id="charCount">160</div>
+<h1>Task</h1>
 
-<div class="toolbar">
-  <button id="addTaskBtn">+ Add Task</button>
-  <button id="clearAllBtn">Clear All</button>
-</div>
+<select id="prioritySelect">
+  <option value="H">High (H)</option>
+  <option value="M" selected>Medium (M)</option>
+  <option value="L">Low (L)</option>
+</select>
 
-<div class="tasks" id="tasksContainer"></div>
+<input type="text" id="taskInput" placeholder="Task description" />
+<input type="text" id="tagsInput" placeholder="Tags (comma separated)" />
+
+<ul id="taskList"></ul>
 
 <script>
 const taskInput = document.getElementById('taskInput');
-const charCount = document.getElementById('charCount');
-const addTaskBtn = document.getElementById('addTaskBtn');
-const clearAllBtn = document.getElementById('clearAllBtn');
-const tasksContainer = document.getElementById('tasksContainer');
+const tagsInput = document.getElementById('tagsInput');
+const prioritySelect = document.getElementById('prioritySelect');
+const taskList = document.getElementById('taskList');
 
-let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-
-function updateCharCount() {
-  charCount.textContent = 160 - taskInput.value.length;
-}
-taskInput.addEventListener('input', updateCharCount);
-updateCharCount();
+let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
 
 function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
-function renderTasks() {
-  tasksContainer.innerHTML = '';
-  tasks.forEach((task, index) => {
-    const taskDiv = document.createElement('div');
-    taskDiv.className = 'task-item';
+function createTask(text, priority, tags) {
+  return {
+    id: Date.now(),
+    text: text.trim(),
+    completed: false,
+    priority: priority,
+    tags: tags,
+    createdAt: Date.now()
+  };
+}
 
-    const textSpan = document.createElement('span');
-    textSpan.className = 'task-text';
-    if (task.completed) textSpan.classList.add('completed');
-    textSpan.textContent = task.text;
+function render() {
+  taskList.innerHTML = '';
 
-    const metaSpan = document.createElement('span');
-    metaSpan.className = 'task-meta';
-    metaSpan.textContent = task.tags ? `#${task.tags.join(', ')} • ${task.timestamp}` : task.timestamp;
+  tasks.forEach(task => {
+    const li = document.createElement('li');
+    if (task.completed) li.classList.add('completed');
 
-    const btnDiv = document.createElement('div');
-    btnDiv.className = 'task-buttons';
-
-    const toggleBtn = document.createElement('button');
-    toggleBtn.textContent = task.completed ? 'Undo' : 'Done';
-    toggleBtn.onclick = () => {
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = task.completed;
+    checkbox.onclick = () => {
       task.completed = !task.completed;
       saveTasks();
-      renderTasks();
+      render();
     };
 
-    const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = '×';
-    deleteBtn.onclick = () => {
-      tasks.splice(index, 1);
+    const span = document.createElement('span');
+    const tagText = task.tags.map(t => `#${t}`).join(' ');
+    span.textContent = ` (${task.priority}) ${task.text}${tagText ? ' ' + tagText : ''}`;
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'x';
+    delBtn.onclick = () => {
+      tasks = tasks.filter(t => t.id !== task.id);
       saveTasks();
-      renderTasks();
+      render();
     };
 
-    btnDiv.appendChild(toggleBtn);
-    btnDiv.appendChild(deleteBtn);
+    li.appendChild(checkbox);
+    li.appendChild(span);
+    li.appendChild(delBtn);
 
-    taskDiv.appendChild(textSpan);
-    taskDiv.appendChild(metaSpan);
-    taskDiv.appendChild(btnDiv);
-
-    tasksContainer.appendChild(taskDiv);
+    taskList.appendChild(li);
   });
 }
 
-addTaskBtn.onclick = () => {
-  if (!taskInput.value.trim()) return;
-  const timestamp = new Date().toLocaleString();
-  tasks.unshift({ text: taskInput.value.trim(), completed: false, tags: [], timestamp });
+function addTask() {
+  const text = taskInput.value.trim();
+  if (!text) return;
+
+  const tags = tagsInput.value
+    .split(',')
+    .map(t => t.trim())
+    .filter(t => t !== '');
+
+  const newTask = createTask(text, prioritySelect.value, tags);
+  tasks.unshift(newTask);
+
   saveTasks();
-  renderTasks();
+  render();
+
   taskInput.value = '';
-  updateCharCount();
-};
+  tagsInput.value = '';
+  taskInput.focus();
+}
 
-clearAllBtn.onclick = () => {
-  if (!confirm('Clear all tasks?')) return;
-  tasks = [];
-  saveTasks();
-  renderTasks();
-};
+taskInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTask();
+});
 
-renderTasks();
+render();
 </script>
 
 </body>
