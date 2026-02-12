@@ -3,98 +3,159 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Task</title>
+<title>Task Tool</title>
+
+<meta name="theme-color" content="#3b2f2f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
 <style>
-  body {
-    font-family: monospace;
-    max-width: 600px;
-    margin: 40px auto;
-    padding: 0 15px;
-  }
+* { box-sizing: border-box; }
 
-  h1 {
-    font-size: 20px;
-    margin-bottom: 20px;
-  }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #3b2f2f;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
-  input, select, button {
-    font-family: monospace;
-    font-size: 14px;
-  }
+#taskInput, #tagsInput {
+  width: 92%;
+  max-width: 480px;
+  padding: 18px;
+  font-size: 18px;
+  border: none;
+  border-radius: 14px;
+  margin-top: 14px;
+  outline: none;
+  background: #bbf7d0;
+  color: #3b2f2f;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  font-family: inherit;
+}
 
-  #taskInput {
-    width: 100%;
-    margin-bottom: 5px;
-  }
+#taskInput:focus, #tagsInput:focus {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
 
-  #tagsInput {
-    width: 100%;
-    margin-bottom: 10px;
-  }
+#charCount {
+  width: 92%;
+  max-width: 480px;
+  text-align: right;
+  font-size: 12px;
+  color: #ddd;
+  margin-top: 4px;
+  margin-bottom: 6px;
+}
 
-  ul {
-    list-style: none;
-    padding: 0;
-  }
+.toolbar {
+  width: 92%;
+  max-width: 480px;
+  display: flex;
+  gap: 10px;
+  margin: 10px 0 6px;
+}
 
-  li {
-    margin-bottom: 6px;
-  }
+.toolbar button {
+  flex: 1;
+  padding: 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  background: #4a3838;
+  color: #fff;
+}
 
-  .completed span {
-    text-decoration: line-through;
-    opacity: 0.6;
-  }
+.toolbar button.active { background: #2563eb; }
 
-  button {
-    margin-left: 5px;
-  }
+#taskList {
+  width: 92%;
+  max-width: 480px;
+  margin-top: 14px;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #bbf7d0;
+  color: #3b2f2f;
+  margin-bottom: 10px;
+  font-size: 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.task-item.completed span {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.task-item .deleteBtn {
+  margin-left: auto;
+  border: none;
+  background: #4a3838;
+  color: #fff;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 </style>
 </head>
 <body>
 
-<h1>Task</h1>
+<input type="text" id="taskInput" placeholder="Task description…" maxlength="160">
+<input type="text" id="tagsInput" placeholder="Tags (comma separated)">
 
-<select id="prioritySelect">
-  <option value="H">High (H)</option>
-  <option value="M" selected>Medium (M)</option>
-  <option value="L">Low (L)</option>
-</select>
+<div id="charCount">160</div>
 
-<input type="text" id="taskInput" placeholder="Task description" />
-<input type="text" id="tagsInput" placeholder="Tags (comma separated)" />
+<div class="toolbar">
+  <button id="addTaskBtn">➕ Add</button>
+  <button id="clearTasksBtn">🗑 Clear All</button>
+</div>
 
-<ul id="taskList"></ul>
+<div id="taskList"></div>
 
 <script>
 const taskInput = document.getElementById('taskInput');
 const tagsInput = document.getElementById('tagsInput');
-const prioritySelect = document.getElementById('prioritySelect');
+const charCount = document.getElementById('charCount');
+const addTaskBtn = document.getElementById('addTaskBtn');
+const clearTasksBtn = document.getElementById('clearTasksBtn');
 const taskList = document.getElementById('taskList');
 
-let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 
 function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
-function createTask(text, priority, tags) {
+function createTask(text, tags) {
   return {
     id: Date.now(),
     text: text.trim(),
     completed: false,
-    priority: priority,
     tags: tags,
     createdAt: Date.now()
   };
 }
 
-function render() {
+function renderTasks() {
   taskList.innerHTML = '';
-
   tasks.forEach(task => {
-    const li = document.createElement('li');
-    if (task.completed) li.classList.add('completed');
+    const div = document.createElement('div');
+    div.className = 'task-item';
+    if(task.completed) div.classList.add('completed');
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -102,54 +163,65 @@ function render() {
     checkbox.onclick = () => {
       task.completed = !task.completed;
       saveTasks();
-      render();
+      renderTasks();
     };
 
     const span = document.createElement('span');
     const tagText = task.tags.map(t => `#${t}`).join(' ');
-    span.textContent = ` (${task.priority}) ${task.text}${tagText ? ' ' + tagText : ''}`;
+    span.textContent = `${task.text}${tagText ? ' ' + tagText : ''}`;
 
     const delBtn = document.createElement('button');
-    delBtn.textContent = 'x';
+    delBtn.className = 'deleteBtn';
+    delBtn.textContent = '×';
     delBtn.onclick = () => {
       tasks = tasks.filter(t => t.id !== task.id);
       saveTasks();
-      render();
+      renderTasks();
     };
 
-    li.appendChild(checkbox);
-    li.appendChild(span);
-    li.appendChild(delBtn);
-
-    taskList.appendChild(li);
+    div.appendChild(checkbox);
+    div.appendChild(span);
+    div.appendChild(delBtn);
+    taskList.appendChild(div);
   });
 }
 
 function addTask() {
   const text = taskInput.value.trim();
-  if (!text) return;
+  if(!text) return;
 
-  const tags = tagsInput.value
-    .split(',')
-    .map(t => t.trim())
-    .filter(t => t !== '');
-
-  const newTask = createTask(text, prioritySelect.value, tags);
+  const tags = tagsInput.value.split(',').map(t => t.trim()).filter(t => t);
+  const newTask = createTask(text, tags);
   tasks.unshift(newTask);
 
   saveTasks();
-  render();
+  renderTasks();
 
   taskInput.value = '';
   tagsInput.value = '';
+  updateCharCount();
   taskInput.focus();
 }
 
+addTaskBtn.onclick = addTask;
+clearTasksBtn.onclick = () => {
+  if(confirm("Clear all tasks?")) {
+    tasks = [];
+    saveTasks();
+    renderTasks();
+  }
+};
+
 taskInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') addTask();
+  if(e.key === 'Enter') addTask();
 });
 
-render();
+taskInput.addEventListener('input', updateCharCount);
+function updateCharCount() {
+  charCount.textContent = 160 - taskInput.value.length;
+}
+
+renderTasks();
 </script>
 
 </body>
