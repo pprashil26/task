@@ -22,7 +22,7 @@ body {
   align-items: center;
 }
 
-#taskInput, #tagsInput {
+#taskInput {
   width: 92%;
   max-width: 480px;
   padding: 18px;
@@ -37,7 +37,7 @@ body {
   font-family: inherit;
 }
 
-#taskInput:focus, #tagsInput:focus {
+#taskInput:focus {
   outline: 2px solid #22c55e;
   outline-offset: 2px;
 }
@@ -71,8 +71,6 @@ body {
   color: #fff;
 }
 
-.toolbar button.active { background: #2563eb; }
-
 #taskList {
   width: 92%;
   max-width: 480px;
@@ -82,11 +80,12 @@ body {
 .task-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
   padding: 14px;
   border-radius: 14px;
-  background: #bbf7d0;
-  color: #3b2f2f;
+  background: #4a3838;
+  color: #fff;
   margin-bottom: 10px;
   font-size: 16px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
@@ -97,11 +96,27 @@ body {
   opacity: 0.6;
 }
 
-.task-item .deleteBtn {
-  margin-left: auto;
+.task-text {
+  flex: 1;
+  word-break: break-word;
+  margin-right: 10px;
+}
+
+.task-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-controls input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+.task-controls button {
   border: none;
-  background: #4a3838;
-  color: #fff;
+  background: #fff;
+  color: #4a3838;
   border-radius: 50%;
   width: 36px;
   height: 36px;
@@ -114,24 +129,19 @@ body {
 </head>
 <body>
 
-<input type="text" id="taskInput" placeholder="Task description…" maxlength="160">
-<input type="text" id="tagsInput" placeholder="Tags (comma separated)">
-
+<input type="text" id="taskInput" placeholder="Task description (use #tags inline)…" maxlength="160">
 <div id="charCount">160</div>
 
 <div class="toolbar">
   <button id="addTaskBtn">➕ Add</button>
-  <button id="clearTasksBtn">🗑 Clear All</button>
 </div>
 
 <div id="taskList"></div>
 
 <script>
 const taskInput = document.getElementById('taskInput');
-const tagsInput = document.getElementById('tagsInput');
 const charCount = document.getElementById('charCount');
 const addTaskBtn = document.getElementById('addTaskBtn');
-const clearTasksBtn = document.getElementById('clearTasksBtn');
 const taskList = document.getElementById('taskList');
 
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
@@ -140,12 +150,16 @@ function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
-function createTask(text, tags) {
+function parseTags(text) {
+  return (text.match(/#\w+/g) || []).map(t => t.trim());
+}
+
+function createTask(text) {
   return {
     id: Date.now(),
     text: text.trim(),
+    tags: parseTags(text),
     completed: false,
-    tags: tags,
     createdAt: Date.now()
   };
 }
@@ -157,6 +171,13 @@ function renderTasks() {
     div.className = 'task-item';
     if(task.completed) div.classList.add('completed');
 
+    const span = document.createElement('span');
+    span.className = 'task-text';
+    span.textContent = task.text;
+
+    const controls = document.createElement('div');
+    controls.className = 'task-controls';
+
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.checked = task.completed;
@@ -166,12 +187,7 @@ function renderTasks() {
       renderTasks();
     };
 
-    const span = document.createElement('span');
-    const tagText = task.tags.map(t => `#${t}`).join(' ');
-    span.textContent = `${task.text}${tagText ? ' ' + tagText : ''}`;
-
     const delBtn = document.createElement('button');
-    delBtn.className = 'deleteBtn';
     delBtn.textContent = '×';
     delBtn.onclick = () => {
       tasks = tasks.filter(t => t.id !== task.id);
@@ -179,9 +195,12 @@ function renderTasks() {
       renderTasks();
     };
 
-    div.appendChild(checkbox);
+    controls.appendChild(checkbox);
+    controls.appendChild(delBtn);
+
     div.appendChild(span);
-    div.appendChild(delBtn);
+    div.appendChild(controls);
+
     taskList.appendChild(div);
   });
 }
@@ -190,27 +209,18 @@ function addTask() {
   const text = taskInput.value.trim();
   if(!text) return;
 
-  const tags = tagsInput.value.split(',').map(t => t.trim()).filter(t => t);
-  const newTask = createTask(text, tags);
+  const newTask = createTask(text);
   tasks.unshift(newTask);
 
   saveTasks();
   renderTasks();
 
   taskInput.value = '';
-  tagsInput.value = '';
   updateCharCount();
   taskInput.focus();
 }
 
 addTaskBtn.onclick = addTask;
-clearTasksBtn.onclick = () => {
-  if(confirm("Clear all tasks?")) {
-    tasks = [];
-    saveTasks();
-    renderTasks();
-  }
-};
 
 taskInput.addEventListener('keydown', e => {
   if(e.key === 'Enter') addTask();
