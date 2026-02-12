@@ -22,18 +22,43 @@ body {
   align-items: center;
 }
 
-#taskInput {
+/* Wrapper for textarea + highlight */
+.editor-wrapper {
+  position: relative;
   width: 92%;
   max-width: 480px;
-  min-height: 32vh;       /* match Minimal Text */
+  margin-top: 14px;
+}
+
+/* Highlight layer behind textarea */
+#highlightLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 18px;
+  font-size: 22px;
+  line-height: 1.5;
+  min-height: 32vh;
+  border-radius: 14px;
+  color: transparent;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  pointer-events: none;
+  font-family: inherit;
+}
+
+#taskInput {
+  position: relative;
+  width: 100%;
+  min-height: 32vh;
   padding: 18px;
   font-size: 22px;
   line-height: 1.5;
   border: none;
   border-radius: 14px;
-  margin-top: 14px;
-  outline: none;
-  background: #bbf7d0;
+  background: transparent; /* show highlight layer */
   color: #3b2f2f;
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   font-family: inherit;
@@ -137,7 +162,10 @@ body {
 </head>
 <body>
 
-<textarea id="taskInput" maxlength="160" placeholder="Task description (use #tags inline)…"></textarea>
+<div class="editor-wrapper">
+  <div id="highlightLayer"></div>
+  <textarea id="taskInput" maxlength="160" placeholder="Task description (use #tags inline)…"></textarea>
+</div>
 <div id="charCount">160</div>
 
 <div class="toolbar">
@@ -151,6 +179,7 @@ const taskInput = document.getElementById('taskInput');
 const charCount = document.getElementById('charCount');
 const addTaskBtn = document.getElementById('addTaskBtn');
 const taskList = document.getElementById('taskList');
+const highlightLayer = document.getElementById('highlightLayer');
 
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 
@@ -231,8 +260,14 @@ function autoGrow() {
   taskInput.style.height = taskInput.scrollHeight + 'px';
 }
 
+// Update live highlight in textarea
+function updateHighlight() {
+  highlightLayer.innerHTML = parseTagsHTML(taskInput.value) + '<br>';
+}
+
 taskInput.addEventListener('input', () => {
   updateCharCount();
+  updateHighlight();
   autoGrow();
 });
 
@@ -249,6 +284,7 @@ function addTask() {
   renderTasks();
   taskInput.value = '';
   updateCharCount();
+  updateHighlight();
   autoGrow();
   taskInput.focus();
 }
@@ -256,10 +292,11 @@ function addTask() {
 addTaskBtn.onclick = addTask;
 taskInput.addEventListener('keydown', e => { if(e.key==='Enter') addTask(); });
 
-// Initial render for existing tasks
+// Initialize
 renderTasks();
 autoGrow();
 updateCharCount();
+updateHighlight();
 </script>
 
 </body>
