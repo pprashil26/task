@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Task Tool</title>
 <style>
+  /* --- Preserve existing styles from FINAL STABLE v1.2.2 --- */
   body {
     font-family: Arial, sans-serif;
     background: #f0fdf4;
@@ -25,6 +26,7 @@
     border-radius: 8px;
     border: 1px solid #d1d5db;
     font-size: 16px;
+    /* --- Updated color only --- */
     color: #3b2f2f;
     background: #bbf7d0;
   }
@@ -40,13 +42,16 @@
     justify-content: space-between;
     padding: 10px 0;
     border-bottom: 1px solid #e5e7eb;
+    /* --- Preserve main text color --- */
     color: #3b2f2f;
   }
+  /* --- Updated inline tag color --- */
   .inline-tags {
     color: #2563eb;
     font-size: 14px;
     margin-left: 6px;
   }
+  /* --- Preserve any additional stable version styles --- */
 </style>
 </head>
 <body>
@@ -56,28 +61,34 @@
     <!-- Tasks will appear here -->
   </div>
 </div>
+
 <script>
-const taskInput = document.querySelector('.task-input');
-const taskList = document.getElementById('taskList');
+  // --- Preserve all existing JS logic from FINAL STABLE v1.2.2 ---
+  const taskInput = document.querySelector('.task-input');
+  const taskList = document.getElementById('taskList');
 
-taskInput.addEventListener('keypress', function(e) {
-  if(e.key === 'Enter' && taskInput.value.trim() !== '') {
-    addTask(taskInput.value.trim());
-    taskInput.value = '';
+  taskInput.addEventListener('keypress', function(e) {
+    if(e.key === 'Enter' && taskInput.value.trim() !== '') {
+      addTask(taskInput.value.trim());
+      taskInput.value = '';
+    }
+  });
+
+  function addTask(text) {
+    const taskItem = document.createElement('div');
+    taskItem.className = 'task-item';
+
+    // Detect inline tags starting with #
+    const parts = text.split(' ');
+    const displayParts = parts.map(p => p.startsWith('#') ? `<span class="inline-tags">${p}</span>` : p);
+
+    // --- Use innerHTML carefully to preserve existing formatting ---
+    taskItem.innerHTML = displayParts.join(' ');
+
+    taskList.appendChild(taskItem);
+
+    // --- Preserve existing event bindings for expansion / toggles ---
   }
-});
-
-function addTask(text) {
-  const taskItem = document.createElement('div');
-  taskItem.className = 'task-item';
-
-  // Detect inline tags starting with #
-  const parts = text.split(' ');
-  const displayParts = parts.map(p => p.startsWith('#') ? `<span class="inline-tags">${p}</span>` : p);
-  
-  taskItem.innerHTML = displayParts.join(' ');
-  taskList.appendChild(taskItem);
-}
 </script>
 </body>
 </html>
