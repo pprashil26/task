@@ -25,9 +25,10 @@ body {
 #taskInput {
   width: 92%;
   max-width: 480px;
-  padding: 22px 18px; /* adjusted for Minimal Text height */
-  font-size: 24px;    /* larger font for better visibility */
-  line-height: 1.6;   /* more vertical space for text */
+  padding: 20px 18px;       /* padding inside input */
+  font-size: 24px;           /* larger font for Minimal Text style */
+  line-height: 1.6;          /* more vertical spacing */
+  min-height: 60px;           /* ensures visible height */
   border: none;
   border-radius: 14px;
   margin-top: 14px;
@@ -104,7 +105,7 @@ body {
 
 /* Inline tag style */
 .task-text .tag {
-  color: #a8f0c6; /* calm, minimalist highlight for tags */
+  color: #a8f0c6; /* calm green */
   font-weight: 500;
 }
 
@@ -150,15 +151,27 @@ const charCount = document.getElementById('charCount');
 const addTaskBtn = document.getElementById('addTaskBtn');
 const taskList = document.getElementById('taskList');
 
+// Load tasks from localStorage
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 
 function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
-// Convert #tags into span elements for display
+// Escape HTML to prevent injection
+function escapeHTML(str) {
+  return str.replace(/[&<>"']/g, m => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[m]));
+}
+
+// Convert #tags into span elements for highlighting
 function parseTagsHTML(text) {
-  return text.replace(/(#\w+)/g, '<span class="tag">$1</span>');
+  return escapeHTML(text).replace(/(#\w+)/g, '<span class="tag">$1</span>');
 }
 
 function createTask(text) {
@@ -180,7 +193,7 @@ function renderTasks() {
 
     const span = document.createElement('span');
     span.className = 'task-text';
-    span.innerHTML = parseTagsHTML(task.text); // ensures existing & new tasks show highlighted tags
+    span.innerHTML = parseTagsHTML(task.text); // existing & new tasks both processed
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
@@ -238,7 +251,7 @@ function updateCharCount() {
   charCount.textContent = 160 - taskInput.value.length;
 }
 
-// Initial rendering (existing tasks will now show highlighted tags)
+// Render tasks on page load, existing tasks will show highlighted tags
 renderTasks();
 </script>
 
