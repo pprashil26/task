@@ -25,9 +25,9 @@ body {
 #taskInput {
   width: 92%;
   max-width: 480px;
-  padding: 18px;
-  font-size: 22px;
-  line-height: 1.5;
+  padding: 20px 18px; /* adjusted padding */
+  font-size: 24px;    /* slightly bigger font to match Minimal Text */
+  line-height: 1.6;   /* adjusted line height */
   border: none;
   border-radius: 14px;
   margin-top: 14px;
@@ -102,6 +102,12 @@ body {
   margin-right: 10px;
 }
 
+/* Inline tag style */
+.task-text .tag {
+  color: #a8f0c6; /* calm, minimalist highlight for tags */
+  font-weight: 500;
+}
+
 .task-controls {
   display: flex;
   align-items: center;
@@ -150,15 +156,16 @@ function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
-function parseTags(text) {
-  return (text.match(/#\w+/g) || []).map(t => t.trim());
+// Convert #tags into span elements
+function parseTagsHTML(text) {
+  return text.replace(/(#\w+)/g, '<span class="tag">$1</span>');
 }
 
 function createTask(text) {
   return {
     id: Date.now(),
     text: text.trim(),
-    tags: parseTags(text),
+    tags: (text.match(/#\w+/g) || []).map(t => t.trim()),
     completed: false,
     createdAt: Date.now()
   };
@@ -173,7 +180,7 @@ function renderTasks() {
 
     const span = document.createElement('span');
     span.className = 'task-text';
-    span.textContent = task.text;
+    span.innerHTML = parseTagsHTML(task.text);
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
