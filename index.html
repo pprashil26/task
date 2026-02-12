@@ -36,6 +36,9 @@ body {
   color: #3b2f2f;
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   font-family: inherit;
+
+  overflow: hidden;  /* remove scroll bar */
+  resize: none;      /* prevent manual resize */
   white-space: pre-wrap;
   overflow-wrap: break-word;
 }
@@ -157,7 +160,7 @@ function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
-// Escape HTML for safe rendering
+// Escape HTML
 function escapeHTML(str) {
   return str.replace(/[&<>"']/g, m => ({
     '&':'&amp;',
@@ -168,16 +171,29 @@ function escapeHTML(str) {
   }[m]));
 }
 
-// Wrap #tags in span for display
+// Wrap #tags in span
 function parseTagsHTML(text) {
   return escapeHTML(text).replace(/(#\w+)/g, '<span class="tag">$1</span>');
 }
 
-// Update textarea input highlight for live preview
+// Update live preview and char count
 function updateHighlightPreview() {
-  const text = taskInput.value;
-  charCount.textContent = 160 - text.length;
+  charCount.textContent = 160 - taskInput.value.length;
 }
+
+// Auto-expand textarea
+function autoGrow() {
+  taskInput.style.height = 'auto';
+  taskInput.style.height = taskInput.scrollHeight + 'px';
+}
+
+// Initialize height
+autoGrow();
+
+taskInput.addEventListener('input', () => {
+  updateHighlightPreview(); // live tag update
+  autoGrow();               // auto-expand
+});
 
 // Create task object
 function createTask(text) {
@@ -190,7 +206,7 @@ function createTask(text) {
   };
 }
 
-// Render all tasks
+// Render tasks
 function renderTasks() {
   taskList.innerHTML = '';
   tasks.forEach(task => {
@@ -241,12 +257,12 @@ function addTask() {
   renderTasks();
   taskInput.value = '';
   updateHighlightPreview();
+  autoGrow();
   taskInput.focus();
 }
 
 // Event listeners
 addTaskBtn.onclick = addTask;
-taskInput.addEventListener('input', updateHighlightPreview);
 taskInput.addEventListener('keydown', e => { if(e.key === 'Enter') addTask(); });
 
 // Initialize
