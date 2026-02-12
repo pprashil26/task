@@ -36,19 +36,21 @@ body {
   top: 0;
   left: 0;
   width: 100%;
+  min-height: 32vh;
   padding: 18px;
   font-size: 22px;
   line-height: 1.5;
-  min-height: 32vh;
   border-radius: 14px;
-  color: transparent;
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: break-word;
   pointer-events: none;
   font-family: inherit;
+  color: #3b2f2f; /* show highlighted text */
+  z-index: 1;
 }
 
+/* Textarea */
 #taskInput {
   position: relative;
   width: 100%;
@@ -56,14 +58,15 @@ body {
   padding: 18px;
   font-size: 22px;
   line-height: 1.5;
-  border: none;
   border-radius: 14px;
-  background: transparent; /* show highlight layer */
-  color: #3b2f2f;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  border: none;
+  background: transparent;
+  color: transparent;   /* hide actual text */
+  caret-color: #3b2f2f; /* caret visible */
   font-family: inherit;
   resize: none;
   overflow: hidden;
+  z-index: 2;
 }
 
 #taskInput:focus {
@@ -258,13 +261,20 @@ function renderTasks() {
 function autoGrow() {
   taskInput.style.height = 'auto';
   taskInput.style.height = taskInput.scrollHeight + 'px';
+  highlightLayer.style.height = taskInput.style.height;
 }
 
 // Update live highlight in textarea
 function updateHighlight() {
-  highlightLayer.innerHTML = parseTagsHTML(taskInput.value) + '<br>';
+  highlightLayer.innerHTML = parseTagsHTML(taskInput.value) || '<br>';
 }
 
+// Sync scroll
+taskInput.addEventListener('scroll', () => {
+  highlightLayer.scrollTop = taskInput.scrollTop;
+});
+
+// Update highlight on input
 taskInput.addEventListener('input', () => {
   updateCharCount();
   updateHighlight();
