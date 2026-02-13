@@ -137,6 +137,10 @@ body {
   align-items: center;
   padding: 0;
 }
+
+.task-controls button span {
+  pointer-events: none; /* allows click on button */
+}
 </style>
 </head>
 <body>
@@ -247,8 +251,10 @@ function renderTasks() {
     };
 
     const pinBtn = document.createElement('button');
-    pinBtn.innerHTML = '📌';
-    pinBtn.style.color = task.pinned ? '#fff' : '#ccc'; // FIXED: white when pinned, gray when unpinned
+    const pinSpan = document.createElement('span'); // wrap emoji
+    pinSpan.textContent = '📌';
+    pinSpan.style.color = task.pinned ? '#fff' : '#ccc';
+    pinBtn.appendChild(pinSpan);
     pinBtn.onclick = () => {
       task.pinned = !task.pinned;
       saveTasks();
