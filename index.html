@@ -145,7 +145,7 @@ body {
   pointer-events: none;
 }
 .task-controls button.pinned svg {
-  fill: #fce77d; /* updated to light yellow for visibility */
+  fill: #fce77d; /* calm light yellow for pinned tasks */
 }
 </style>
 </head>
@@ -299,7 +299,10 @@ function addTask() {
   tasks.unshift(createTask(text));
   saveTasks();
   renderTasks();
+
+  // reset textarea to original state
   taskInput.value = '';
+  taskInput.scrollTop = 0;       // cursor at top
   updateHighlightPreview();
   autoGrow();
   taskInput.focus();
