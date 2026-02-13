@@ -91,7 +91,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 2px 6px; 
+  padding: 2px 6px;
   border-bottom: 1px solid rgba(255,255,255,0.1);
   color: #fff;
   margin-bottom: 0;
@@ -145,6 +145,7 @@ body {
   fill: #ccc;
   pointer-events: none;
 }
+
 .task-controls button.pinned svg {
   fill: #fce77d; /* calm light yellow for pinned tasks */
 }
@@ -163,6 +164,9 @@ body {
 
 <div id="taskList"></div>
 
+<!-- Hidden mirror div for textarea auto-grow and cursor reset -->
+<div id="mirror" style="position:absolute; top:-9999px; left:-9999px; visibility:hidden; white-space: pre-wrap; word-wrap: break-word;"></div>
+
 <script>
 const taskInput = document.getElementById('taskInput');
 const charCount = document.getElementById('charCount');
@@ -170,6 +174,7 @@ const addTaskBtn = document.getElementById('addTaskBtn');
 const boldBtn = document.getElementById('boldBtn');
 const capsBtn = document.getElementById('capsBtn');
 const taskList = document.getElementById('taskList');
+const mirror = document.getElementById('mirror');
 
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 
@@ -196,8 +201,13 @@ function updateCharCount() {
 }
 
 function autoGrow() {
-  taskInput.style.height = 'auto';
-  taskInput.style.height = taskInput.scrollHeight + 'px';
+  mirror.style.width = taskInput.offsetWidth + 'px';
+  mirror.style.font = window.getComputedStyle(taskInput).font;
+  mirror.style.lineHeight = window.getComputedStyle(taskInput).lineHeight;
+  mirror.style.padding = window.getComputedStyle(taskInput).padding;
+  mirror.style.border = window.getComputedStyle(taskInput).border;
+  mirror.textContent = taskInput.value || taskInput.placeholder;
+  taskInput.style.height = mirror.scrollHeight + 'px';
 }
 
 autoGrow();
@@ -294,14 +304,13 @@ function renderTasks() {
   });
 }
 
-// Properly reset textarea
+// Reset textarea properly using mirror div
 function resetTaskInput() {
-  taskInput.style.height = '32px';      // reset to min-height
-  taskInput.value = '';                  // clear value
-  taskInput.scrollTop = 0;              // scroll to top
-  taskInput.selectionStart = taskInput.selectionEnd = 0; // cursor at top
-  autoGrow();                            // resume auto-grow
-  taskInput.focus();                     // focus cursor
+  taskInput.value = '';
+  taskInput.scrollTop = 0;
+  taskInput.selectionStart = taskInput.selectionEnd = 0;
+  autoGrow();
+  taskInput.focus();
   updateCharCount();
 }
 
