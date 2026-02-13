@@ -166,7 +166,6 @@ function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
-// Escape HTML
 function escapeHTML(str) {
   return str.replace(/[&<>"']/g, m => ({
     '&':'&amp;',
@@ -177,17 +176,14 @@ function escapeHTML(str) {
   }[m]));
 }
 
-// Wrap #tags in span
 function parseTagsHTML(text) {
   return escapeHTML(text).replace(/(#\w+)/g, '<span class="tag">$1</span>');
 }
 
-// Update char count
 function updateHighlightPreview() {
   charCount.textContent = 160 - taskInput.value.length;
 }
 
-// Auto-expand textarea
 function autoGrow() {
   taskInput.style.height = 'auto';
   taskInput.style.height = taskInput.scrollHeight + 'px';
@@ -199,7 +195,6 @@ taskInput.addEventListener('input', () => {
   autoGrow();
 });
 
-// Toggle bold and caps
 boldBtn.onclick = () => {
   taskInput.style.fontWeight = taskInput.style.fontWeight === 'bold' ? 'normal' : 'bold';
   boldBtn.classList.toggle('active');
@@ -210,7 +205,6 @@ capsBtn.onclick = () => {
   capsBtn.classList.toggle('active');
 };
 
-// Create task object
 function createTask(text) {
   return {
     id: Date.now(),
@@ -224,7 +218,6 @@ function createTask(text) {
   };
 }
 
-// Render tasks
 function renderTasks() {
   taskList.innerHTML = '';
   const sortedTasks = [...tasks].sort((a,b) => b.pinned - a.pinned || b.createdAt - a.createdAt);
@@ -255,7 +248,7 @@ function renderTasks() {
 
     const pinBtn = document.createElement('button');
     pinBtn.innerHTML = '📌';
-    pinBtn.style.color = task.pinned ? '#fff' : '#ccc';
+    pinBtn.style.color = task.pinned ? '#fff' : '#ccc'; // FIXED: white when pinned, gray when unpinned
     pinBtn.onclick = () => {
       task.pinned = !task.pinned;
       saveTasks();
@@ -290,7 +283,6 @@ function renderTasks() {
   });
 }
 
-// Add new task
 function addTask() {
   const text = taskInput.value.trim();
   if(!text) return;
@@ -303,11 +295,9 @@ function addTask() {
   taskInput.focus();
 }
 
-// Event listeners
 addTaskBtn.onclick = addTask;
 taskInput.addEventListener('keydown', e => { if(e.key === 'Enter') addTask(); });
 
-// Initialize
 renderTasks();
 updateHighlightPreview();
 </script>
