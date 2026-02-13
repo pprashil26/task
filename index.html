@@ -147,7 +147,7 @@ body {
 }
 
 .task-controls button.pinned svg {
-  fill: #fce77d; /* calm light yellow for pinned tasks */
+  fill: #fce77d;
 }
 </style>
 </head>
@@ -287,6 +287,9 @@ function renderTasks() {
     const delBtn = document.createElement('button');
     delBtn.textContent = '×';
     delBtn.onclick = () => {
+      const confirmDelete = confirm("Are you sure you want to delete this task?");
+      if (!confirmDelete) return;
+
       tasks = tasks.filter(t => t.id !== task.id);
       saveTasks();
       renderTasks();
@@ -303,7 +306,6 @@ function renderTasks() {
   });
 }
 
-// Reset textarea properly using requestAnimationFrame
 function resetTaskInput() {
   taskInput.value = '';
   updateCharCount();
