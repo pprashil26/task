@@ -138,8 +138,14 @@ body {
   padding: 0;
 }
 
-.task-controls button span {
-  pointer-events: none; /* allows click on button */
+.task-controls button svg {
+  width: 16px;
+  height: 16px;
+  fill: #ccc;
+  pointer-events: none;
+}
+.task-controls button.pinned svg {
+  fill: #fff;
 }
 </style>
 </head>
@@ -250,11 +256,10 @@ function renderTasks() {
       renderTasks();
     };
 
+    // Pin button using inline SVG
     const pinBtn = document.createElement('button');
-    const pinSpan = document.createElement('span'); // wrap emoji
-    pinSpan.textContent = '📌';
-    pinSpan.style.color = task.pinned ? '#fff' : '#ccc';
-    pinBtn.appendChild(pinSpan);
+    pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
+    pinBtn.classList.toggle('pinned', task.pinned);
     pinBtn.onclick = () => {
       task.pinned = !task.pinned;
       saveTasks();
