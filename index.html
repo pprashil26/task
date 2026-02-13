@@ -39,6 +39,7 @@ body {
   resize: none;
   white-space: pre-wrap;
   overflow-wrap: break-word;
+  min-height: 32px;
 }
 
 #taskInput:focus {
@@ -190,7 +191,7 @@ function parseTagsHTML(text) {
   return escapeHTML(text).replace(/(#\w+)/g, '<span class="tag">$1</span>');
 }
 
-function updateHighlightPreview() {
+function updateCharCount() {
   charCount.textContent = 160 - taskInput.value.length;
 }
 
@@ -201,7 +202,7 @@ function autoGrow() {
 
 autoGrow();
 taskInput.addEventListener('input', () => {
-  updateHighlightPreview();
+  updateCharCount();
   autoGrow();
 });
 
@@ -300,10 +301,11 @@ function addTask() {
   saveTasks();
   renderTasks();
 
-  // reset textarea to original state
+  // Reset textarea properly
   taskInput.value = '';
-  taskInput.scrollTop = 0;       // cursor at top
-  updateHighlightPreview();
+  taskInput.style.height = 'auto';
+  taskInput.scrollTop = 0;   // ensure cursor is at top
+  updateCharCount();
   autoGrow();
   taskInput.focus();
 }
@@ -312,7 +314,7 @@ addTaskBtn.onclick = addTask;
 taskInput.addEventListener('keydown', e => { if(e.key === 'Enter') addTask(); });
 
 renderTasks();
-updateHighlightPreview();
+updateCharCount();
 </script>
 
 </body>
