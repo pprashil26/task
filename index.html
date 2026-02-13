@@ -87,13 +87,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 8px; /* compact padding */
-  border-radius: 10px;
-  background: #4a3838;
+  padding: 2px 6px; /* compact vertical/horizontal padding */
+  border-bottom: 1px solid rgba(255,255,255,0.1); /* subtle line separator */
   color: #fff;
-  margin-bottom: 4px; /* less space between tasks */
-  font-size: 14px; /* smaller font */
-  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  margin-bottom: 0; /* remove extra spacing */
+  font-size: 14px; /* slightly smaller font */
 }
 
 .task-item.completed .task-text {
@@ -119,17 +117,17 @@ body {
 }
 
 .task-controls input[type="checkbox"] {
-  width: 16px; /* smaller checkbox */
-  height: 16px;
+  width: 14px; /* smaller checkbox */
+  height: 14px;
 }
 
 .task-controls button {
   border: none;
-  background: #4a3838;
+  background: transparent;
   color: #fff;
   border-radius: 50%;
-  width: 28px; /* smaller pin/delete buttons */
-  height: 28px;
+  width: 24px; /* smaller pin/delete */
+  height: 24px;
   font-size: 14px;
   display: flex;
   justify-content: center;
@@ -203,7 +201,7 @@ function createTask(text) {
     text: text.trim(),
     tags: (text.match(/#\w+/g) || []).map(t => t.trim()),
     completed: false,
-    pinned: false, // new pinned property
+    pinned: false, // pinned property
     createdAt: Date.now()
   };
 }
