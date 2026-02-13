@@ -164,7 +164,6 @@ body {
 
 <div id="taskList"></div>
 
-<!-- Hidden mirror div for textarea auto-grow and cursor reset -->
 <div id="mirror" style="position:absolute; top:-9999px; left:-9999px; visibility:hidden; white-space: pre-wrap; word-wrap: break-word;"></div>
 
 <script>
@@ -304,14 +303,16 @@ function renderTasks() {
   });
 }
 
-// Reset textarea properly using mirror div
+// Reset textarea properly using requestAnimationFrame
 function resetTaskInput() {
   taskInput.value = '';
-  taskInput.scrollTop = 0;
-  taskInput.selectionStart = taskInput.selectionEnd = 0;
-  autoGrow();
-  taskInput.focus();
   updateCharCount();
+  requestAnimationFrame(() => {
+    taskInput.scrollTop = 0;
+    taskInput.selectionStart = taskInput.selectionEnd = 0;
+    autoGrow();
+    taskInput.focus();
+  });
 }
 
 function addTask() {
