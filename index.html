@@ -35,7 +35,6 @@ body {
   background: #bbf7d0;
   color: #3b2f2f;
   font-family: inherit;
-
   overflow: hidden;
   resize: none;
   white-space: pre-wrap;
@@ -110,7 +109,7 @@ body {
 }
 
 .task-text .tag {
-  color: #a8f0c6; 
+  color: #a8f0c6;
   font-weight: 500;
 }
 
@@ -183,7 +182,7 @@ function parseTagsHTML(text) {
   return escapeHTML(text).replace(/(#\w+)/g, '<span class="tag">$1</span>');
 }
 
-// Update live preview and char count
+// Update char count
 function updateHighlightPreview() {
   charCount.textContent = 160 - taskInput.value.length;
 }
@@ -194,9 +193,7 @@ function autoGrow() {
   taskInput.style.height = taskInput.scrollHeight + 'px';
 }
 
-// Initialize height
 autoGrow();
-
 taskInput.addEventListener('input', () => {
   updateHighlightPreview();
   autoGrow();
@@ -221,6 +218,7 @@ function createTask(text) {
     tags: (text.match(/#\w+/g) || []).map(t => t.trim()),
     completed: false,
     pinned: false,
+    bold: false,
     createdAt: Date.now()
   };
 }
@@ -238,6 +236,8 @@ function renderTasks() {
     const span = document.createElement('span');
     span.className = 'task-text';
     span.innerHTML = parseTagsHTML(task.text);
+    if(task.bold) span.style.fontWeight = 'bold';
+    else span.style.fontWeight = 'normal';
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
@@ -253,9 +253,18 @@ function renderTasks() {
 
     const pinBtn = document.createElement('button');
     pinBtn.innerHTML = '📌';
-    pinBtn.style.color = task.pinned ? '#22c55e' : '#fff';
+    pinBtn.style.color = task.pinned ? '#fff' : '#ccc';
     pinBtn.onclick = () => {
       task.pinned = !task.pinned;
+      saveTasks();
+      renderTasks();
+    };
+
+    const boldTaskBtn = document.createElement('button');
+    boldTaskBtn.innerHTML = 'B';
+    boldTaskBtn.style.fontWeight = task.bold ? 'bold' : 'normal';
+    boldTaskBtn.onclick = () => {
+      task.bold = !task.bold;
       saveTasks();
       renderTasks();
     };
@@ -270,6 +279,7 @@ function renderTasks() {
 
     controls.appendChild(checkbox);
     controls.appendChild(pinBtn);
+    controls.appendChild(boldTaskBtn);
     controls.appendChild(delBtn);
 
     div.appendChild(span);
