@@ -37,8 +37,8 @@ body {
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   font-family: inherit;
 
-  overflow: hidden;  /* remove scroll bar */
-  resize: none;      /* prevent manual resize */
+  overflow: hidden;
+  resize: none;
   white-space: pre-wrap;
   overflow-wrap: break-word;
 }
@@ -87,13 +87,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  border-radius: 14px;
+  padding: 4px 8px; /* compact padding */
+  border-radius: 10px;
   background: #4a3838;
   color: #fff;
-  margin-bottom: 8px;
-  font-size: 16px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  margin-bottom: 4px; /* less space between tasks */
+  font-size: 14px; /* smaller font */
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
 
 .task-item.completed .task-text {
@@ -104,7 +104,7 @@ body {
 .task-text {
   flex: 1;
   word-break: break-word;
-  margin-right: 10px;
+  margin-right: 6px;
 }
 
 .task-text .tag {
@@ -115,12 +115,12 @@ body {
 .task-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .task-controls input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
+  width: 16px; /* smaller checkbox */
+  height: 16px;
 }
 
 .task-controls button {
@@ -128,12 +128,13 @@ body {
   background: #4a3838;
   color: #fff;
   border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  font-size: 16px;
+  width: 28px; /* smaller pin/delete buttons */
+  height: 28px;
+  font-size: 14px;
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 0;
 }
 </style>
 </head>
@@ -191,8 +192,8 @@ function autoGrow() {
 autoGrow();
 
 taskInput.addEventListener('input', () => {
-  updateHighlightPreview(); // live tag update
-  autoGrow();               // auto-expand
+  updateHighlightPreview();
+  autoGrow();
 });
 
 // Create task object
@@ -202,6 +203,7 @@ function createTask(text) {
     text: text.trim(),
     tags: (text.match(/#\w+/g) || []).map(t => t.trim()),
     completed: false,
+    pinned: false, // new pinned property
     createdAt: Date.now()
   };
 }
@@ -209,7 +211,11 @@ function createTask(text) {
 // Render tasks
 function renderTasks() {
   taskList.innerHTML = '';
-  tasks.forEach(task => {
+
+  // Sort: pinned first
+  const sortedTasks = [...tasks].sort((a,b) => b.pinned - a.pinned || b.createdAt - a.createdAt);
+
+  sortedTasks.forEach(task => {
     const div = document.createElement('div');
     div.className = 'task-item';
     if(task.completed) div.classList.add('completed');
@@ -230,6 +236,15 @@ function renderTasks() {
       renderTasks();
     };
 
+    const pinBtn = document.createElement('button');
+    pinBtn.innerHTML = '📌';
+    if(task.pinned) pinBtn.style.color = '#22c55e';
+    pinBtn.onclick = () => {
+      task.pinned = !task.pinned;
+      saveTasks();
+      renderTasks();
+    };
+
     const delBtn = document.createElement('button');
     delBtn.textContent = '×';
     delBtn.onclick = () => {
@@ -239,6 +254,7 @@ function renderTasks() {
     };
 
     controls.appendChild(checkbox);
+    controls.appendChild(pinBtn);
     controls.appendChild(delBtn);
 
     div.appendChild(span);
