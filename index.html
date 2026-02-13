@@ -301,10 +301,10 @@ function addTask() {
   saveTasks();
   renderTasks();
 
-  // Reset textarea properly
-  taskInput.value = '';
-  taskInput.style.height = 'auto';
-  taskInput.scrollTop = 0;   // ensure cursor is at top
+  // Fix textarea reset
+  taskInput.style.height = 'auto';       // reset height
+  taskInput.value = '';                  // clear value
+  taskInput.selectionStart = taskInput.selectionEnd = 0; // move cursor to top
   updateCharCount();
   autoGrow();
   taskInput.focus();
