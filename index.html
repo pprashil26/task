@@ -145,7 +145,7 @@ body {
   pointer-events: none;
 }
 .task-controls button.pinned svg {
-  fill: #a8f0c6; /* changed from white to tag highlight color */
+  fill: #fce77d; /* updated to light yellow for visibility */
 }
 </style>
 </head>
@@ -256,7 +256,6 @@ function renderTasks() {
       renderTasks();
     };
 
-    // Pin button using inline SVG
     const pinBtn = document.createElement('button');
     pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
     pinBtn.classList.toggle('pinned', task.pinned);
