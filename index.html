@@ -218,7 +218,8 @@ function createTask(text) {
     tags: (text.match(/#\w+/g) || []).map(t => t.trim()),
     completed: false,
     pinned: false,
-    bold: false,
+    bold: taskInput.style.fontWeight === 'bold',
+    caps: taskInput.style.textTransform === 'uppercase',
     createdAt: Date.now()
   };
 }
@@ -235,9 +236,10 @@ function renderTasks() {
 
     const span = document.createElement('span');
     span.className = 'task-text';
-    span.innerHTML = parseTagsHTML(task.text);
-    if(task.bold) span.style.fontWeight = 'bold';
-    else span.style.fontWeight = 'normal';
+    let taskText = task.text;
+    if(task.caps) taskText = taskText.toUpperCase();
+    span.innerHTML = parseTagsHTML(taskText);
+    span.style.fontWeight = task.bold ? 'bold' : 'normal';
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
