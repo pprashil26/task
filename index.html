@@ -294,20 +294,24 @@ function renderTasks() {
   });
 }
 
+// Properly reset textarea
+function resetTaskInput() {
+  taskInput.style.height = '32px';      // reset to min-height
+  taskInput.value = '';                  // clear value
+  taskInput.scrollTop = 0;              // scroll to top
+  taskInput.selectionStart = taskInput.selectionEnd = 0; // cursor at top
+  autoGrow();                            // resume auto-grow
+  taskInput.focus();                     // focus cursor
+  updateCharCount();
+}
+
 function addTask() {
   const text = taskInput.value.trim();
   if(!text) return;
   tasks.unshift(createTask(text));
   saveTasks();
   renderTasks();
-
-  // Fix textarea reset
-  taskInput.style.height = 'auto';       // reset height
-  taskInput.value = '';                  // clear value
-  taskInput.selectionStart = taskInput.selectionEnd = 0; // move cursor to top
-  updateCharCount();
-  autoGrow();
-  taskInput.focus();
+  resetTaskInput();
 }
 
 addTaskBtn.onclick = addTask;
