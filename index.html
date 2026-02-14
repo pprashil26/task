@@ -73,6 +73,10 @@ body {
   color: #fff;
 }
 
+.toolbar button.active {
+  background: #2563eb;
+}
+
 #taskList {
   width: 92%;
   max-width: 480px;
@@ -129,7 +133,11 @@ body {
 }
 
 .task-controls button.low-priority.active {
-  color: #fce38a; /* calm light yellow for visibility */
+  color: #fce38a; /* calm light yellow */
+}
+
+.task-controls button.pin.active {
+  color: #fff;
 }
 </style>
 </head>
@@ -140,6 +148,7 @@ body {
 
 <div class="toolbar">
   <button id="addTaskBtn">➕ Add</button>
+  <button id="boldBtn">B</button>
   <button id="capsBtn">CAPS</button>
 </div>
 
@@ -149,11 +158,13 @@ body {
 const taskInput = document.getElementById('taskInput');
 const charCount = document.getElementById('charCount');
 const addTaskBtn = document.getElementById('addTaskBtn');
+const boldBtn = document.getElementById('boldBtn');
 const capsBtn = document.getElementById('capsBtn');
 const taskList = document.getElementById('taskList');
 
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 let isCaps = false;
+let isBold = false;
 
 function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -172,6 +183,7 @@ function createTask(text) {
     pinned: false,
     lowPriority: false,
     caps: isCaps,
+    bold: isBold,
     createdAt: Date.now()
   };
 }
@@ -195,7 +207,8 @@ function renderTasks() {
     const span = document.createElement('span');
     span.className = 'task-text';
     span.textContent = task.text;
-    if(task.caps) span.style.textTransform = 'uppercase';
+    span.style.fontWeight = task.bold ? 'bold' : 'normal';
+    span.style.textTransform = task.caps ? 'uppercase' : 'none';
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
@@ -211,6 +224,7 @@ function renderTasks() {
 
     const pinBtn = document.createElement('button');
     pinBtn.textContent = '📌';
+    pinBtn.classList.add('pin');
     pinBtn.classList.toggle('active', task.pinned);
     pinBtn.onclick = () => {
       task.pinned = !task.pinned;
@@ -266,6 +280,12 @@ function addTask() {
 }
 
 addTaskBtn.onclick = addTask;
+
+boldBtn.onclick = () => {
+  isBold = !isBold;
+  boldBtn.classList.toggle('active');
+  taskInput.style.fontWeight = isBold ? 'bold' : 'normal';
+};
 
 capsBtn.onclick = () => {
   isCaps = !isCaps;
