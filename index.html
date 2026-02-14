@@ -34,12 +34,9 @@ body {
   outline: none;
   background: #bbf7d0;
   color: #3b2f2f;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   font-family: inherit;
   overflow: hidden;
-  resize: none;
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
-  min-height: 32px;
 }
 
 #taskInput:focus {
@@ -61,24 +58,19 @@ body {
   width: 92%;
   max-width: 480px;
   display: flex;
-  gap: 6px;
+  gap: 10px;
   margin: 10px 0 6px;
-  align-items: center;
 }
 
 .toolbar button {
-  padding: 6px 10px;
+  flex: 1;
+  padding: 8px 0;
   font-size: 14px;
   font-weight: 600;
   border: none;
   border-radius: 10px;
   background: #4a3838;
   color: #fff;
-  cursor: pointer;
-}
-
-.toolbar button.active {
-  background: #2563eb;
 }
 
 #taskList {
@@ -91,11 +83,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 2px 6px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: #4a3838;
   color: #fff;
-  margin-bottom: 0;
-  font-size: 14px;
+  margin-bottom: 6px;
+  font-size: 15px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
 .task-item.completed .task-text {
@@ -106,141 +100,92 @@ body {
 .task-text {
   flex: 1;
   word-break: break-word;
-  margin-right: 6px;
-}
-
-.task-text .tag {
-  color: #a8f0c6;
-  font-weight: 500;
+  margin-right: 8px;
 }
 
 .task-controls {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .task-controls input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
 }
 
 .task-controls button {
   border: none;
-  background: transparent;
+  background: #4a3838;
   color: #fff;
   border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  font-size: 14px;
+  width: 32px;
+  height: 32px;
+  font-size: 16px;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0;
+  cursor: pointer;
 }
 
-.task-controls button svg {
-  width: 16px;
-  height: 16px;
-  fill: #ccc;
-  pointer-events: none;
-}
-
-.task-controls button.pinned svg {
-  fill: #fce77d;
+.task-controls button.low-priority.active {
+  color: #fce38a; /* calm light yellow for visibility */
 }
 </style>
 </head>
 <body>
 
-<textarea id="taskInput" placeholder="Task description (use #tags inline)…" maxlength="160"></textarea>
+<input type="text" id="taskInput" placeholder="Task description (use #tags inline)…" maxlength="160">
 <div id="charCount">160</div>
 
 <div class="toolbar">
   <button id="addTaskBtn">➕ Add</button>
-  <button id="boldBtn">B</button>
   <button id="capsBtn">CAPS</button>
 </div>
 
 <div id="taskList"></div>
 
-<div id="mirror" style="position:absolute; top:-9999px; left:-9999px; visibility:hidden; white-space: pre-wrap; word-wrap: break-word;"></div>
-
 <script>
 const taskInput = document.getElementById('taskInput');
 const charCount = document.getElementById('charCount');
 const addTaskBtn = document.getElementById('addTaskBtn');
-const boldBtn = document.getElementById('boldBtn');
 const capsBtn = document.getElementById('capsBtn');
 const taskList = document.getElementById('taskList');
-const mirror = document.getElementById('mirror');
 
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+let isCaps = false;
 
 function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
 }
 
-function escapeHTML(str) {
-  return str.replace(/[&<>"']/g, m => ({
-    '&':'&amp;',
-    '<':'&lt;',
-    '>':'&gt;',
-    '"':'&quot;',
-    "'":'&#39;'
-  }[m]));
+function parseTags(text) {
+  return (text.match(/#\w+/g) || []).map(t => t.trim());
 }
-
-function parseTagsHTML(text) {
-  return escapeHTML(text).replace(/(#\w+)/g, '<span class="tag">$1</span>');
-}
-
-function updateCharCount() {
-  charCount.textContent = 160 - taskInput.value.length;
-}
-
-function autoGrow() {
-  mirror.style.width = taskInput.offsetWidth + 'px';
-  mirror.style.font = window.getComputedStyle(taskInput).font;
-  mirror.style.lineHeight = window.getComputedStyle(taskInput).lineHeight;
-  mirror.style.padding = window.getComputedStyle(taskInput).padding;
-  mirror.style.border = window.getComputedStyle(taskInput).border;
-  mirror.textContent = taskInput.value || taskInput.placeholder;
-  taskInput.style.height = mirror.scrollHeight + 'px';
-}
-
-autoGrow();
-taskInput.addEventListener('input', () => {
-  updateCharCount();
-  autoGrow();
-});
-
-boldBtn.onclick = () => {
-  taskInput.style.fontWeight = taskInput.style.fontWeight === 'bold' ? 'normal' : 'bold';
-  boldBtn.classList.toggle('active');
-};
-
-capsBtn.onclick = () => {
-  taskInput.style.textTransform = taskInput.style.textTransform === 'uppercase' ? 'none' : 'uppercase';
-  capsBtn.classList.toggle('active');
-};
 
 function createTask(text) {
   return {
     id: Date.now(),
     text: text.trim(),
-    tags: (text.match(/#\w+/g) || []).map(t => t.trim()),
+    tags: parseTags(text),
     completed: false,
     pinned: false,
-    bold: taskInput.style.fontWeight === 'bold',
-    caps: taskInput.style.textTransform === 'uppercase',
+    lowPriority: false,
+    caps: isCaps,
     createdAt: Date.now()
   };
 }
 
 function renderTasks() {
   taskList.innerHTML = '';
-  const sortedTasks = [...tasks].sort((a,b) => b.pinned - a.pinned || b.createdAt - a.createdAt);
+
+  const sortedTasks = [...tasks].sort((a,b) => {
+    if(a.pinned && !b.pinned) return -1;
+    if(!a.pinned && b.pinned) return 1;
+    if(a.lowPriority && !b.lowPriority) return 1;
+    if(!a.lowPriority && b.lowPriority) return -1;
+    return b.createdAt - a.createdAt;
+  });
 
   sortedTasks.forEach(task => {
     const div = document.createElement('div');
@@ -249,10 +194,8 @@ function renderTasks() {
 
     const span = document.createElement('span');
     span.className = 'task-text';
-    let taskText = task.text;
-    if(task.caps) taskText = taskText.toUpperCase();
-    span.innerHTML = parseTagsHTML(taskText);
-    span.style.fontWeight = task.bold ? 'bold' : 'normal';
+    span.textContent = task.text;
+    if(task.caps) span.style.textTransform = 'uppercase';
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
@@ -267,19 +210,20 @@ function renderTasks() {
     };
 
     const pinBtn = document.createElement('button');
-    pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
-    pinBtn.classList.toggle('pinned', task.pinned);
+    pinBtn.textContent = '📌';
+    pinBtn.classList.toggle('active', task.pinned);
     pinBtn.onclick = () => {
       task.pinned = !task.pinned;
       saveTasks();
       renderTasks();
     };
 
-    const boldTaskBtn = document.createElement('button');
-    boldTaskBtn.innerHTML = 'B';
-    boldTaskBtn.style.fontWeight = task.bold ? 'bold' : 'normal';
-    boldTaskBtn.onclick = () => {
-      task.bold = !task.bold;
+    const lowBtn = document.createElement('button');
+    lowBtn.textContent = '⬇';
+    lowBtn.classList.add('low-priority');
+    lowBtn.classList.toggle('active', task.lowPriority);
+    lowBtn.onclick = () => {
+      task.lowPriority = !task.lowPriority;
       saveTasks();
       renderTasks();
     };
@@ -287,17 +231,16 @@ function renderTasks() {
     const delBtn = document.createElement('button');
     delBtn.textContent = '×';
     delBtn.onclick = () => {
-      const confirmDelete = confirm("Are you sure you want to delete this task?");
-      if (!confirmDelete) return;
-
-      tasks = tasks.filter(t => t.id !== task.id);
-      saveTasks();
-      renderTasks();
+      if(confirm('Are you sure you want to delete this task?')) {
+        tasks = tasks.filter(t => t.id !== task.id);
+        saveTasks();
+        renderTasks();
+      }
     };
 
     controls.appendChild(checkbox);
     controls.appendChild(pinBtn);
-    controls.appendChild(boldTaskBtn);
+    controls.appendChild(lowBtn);
     controls.appendChild(delBtn);
 
     div.appendChild(span);
@@ -306,31 +249,49 @@ function renderTasks() {
   });
 }
 
-function resetTaskInput() {
-  taskInput.value = '';
-  updateCharCount();
-  requestAnimationFrame(() => {
-    taskInput.scrollTop = 0;
-    taskInput.selectionStart = taskInput.selectionEnd = 0;
-    autoGrow();
-    taskInput.focus();
-  });
-}
-
 function addTask() {
   const text = taskInput.value.trim();
   if(!text) return;
-  tasks.unshift(createTask(text));
+
+  const newTask = createTask(text);
+  tasks.unshift(newTask);
+
   saveTasks();
   renderTasks();
-  resetTaskInput();
+
+  taskInput.value = '';
+  updateCharCount();
+  taskInput.style.height = 'auto';
+  taskInput.focus();
 }
 
 addTaskBtn.onclick = addTask;
-taskInput.addEventListener('keydown', e => { if(e.key === 'Enter') addTask(); });
+
+capsBtn.onclick = () => {
+  isCaps = !isCaps;
+  capsBtn.classList.toggle('active');
+  taskInput.style.textTransform = isCaps ? 'uppercase' : 'none';
+};
+
+taskInput.addEventListener('keydown', e => {
+  if(e.key === 'Enter') addTask();
+});
+
+taskInput.addEventListener('input', () => {
+  updateCharCount();
+  autoGrow();
+});
+
+function updateCharCount() {
+  charCount.textContent = 160 - taskInput.value.length;
+}
+
+function autoGrow() {
+  taskInput.style.height = 'auto';
+  taskInput.style.height = (taskInput.scrollHeight) + 'px';
+}
 
 renderTasks();
-updateCharCount();
 </script>
 
 </body>
