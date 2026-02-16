@@ -25,7 +25,6 @@ body {
 #taskInput {
   width: 92%;
   max-width: 480px;
-  min-height: 32vh;
   padding: 18px;
   font-size: 22px;
   line-height: 1.5;
@@ -40,6 +39,7 @@ body {
   resize: none;
   white-space: pre-wrap;
   overflow-wrap: break-word;
+  min-height: 32px;
 }
 
 #taskInput:focus {
@@ -205,6 +205,20 @@ taskInput.addEventListener('input', () => {
   autoGrow();
 });
 
+// **Enter inserts line break**
+taskInput.addEventListener('keydown', e => {
+  if(e.key === 'Enter') {
+    e.stopPropagation();
+    e.preventDefault();
+    const start = taskInput.selectionStart;
+    const end = taskInput.selectionEnd;
+    taskInput.value = taskInput.value.substring(0, start) + "\n" + taskInput.value.substring(end);
+    taskInput.selectionStart = taskInput.selectionEnd = start + 1;
+    autoGrow();
+    updateCharCount();
+  }
+});
+
 function createTask(text) {
   return {
     id: Date.now(),
@@ -291,7 +305,6 @@ function addTask() {
 }
 
 addTaskBtn.onclick = addTask;
-taskInput.addEventListener('keydown', e => { if(e.key === 'Enter') addTask(); });
 
 renderTasks();
 updateCharCount();
