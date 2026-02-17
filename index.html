@@ -6,10 +6,6 @@
 <title>Minimal Tasks</title>
 
 <style>
-* {
-  box-sizing: border-box;
-}
-
 body {
   margin: 0;
   background: #111;
@@ -23,7 +19,7 @@ body {
   padding: 0 16px;
 }
 
-#taskInput {
+input {
   width: 100%;
   padding: 14px;
   background: #1a1a1a;
@@ -60,7 +56,6 @@ body {
   align-items: center;
   padding: 10px 0;
   border-bottom: 1px solid #1f1f1f;
-  cursor: pointer;
 }
 
 .task-text {
@@ -86,11 +81,6 @@ body {
   color: #ffcc66;
 }
 
-/* Ensure file input never affects layout */
-#fileInput {
-  display: none;
-}
-
 </style>
 </head>
 <body>
@@ -107,7 +97,8 @@ body {
 </div>
 
 <div id="taskList"></div>
-<input type="file" id="fileInput">
+
+<input type="file" id="fileInput" style="display:none">
 
 </div>
 
@@ -198,7 +189,6 @@ document.getElementById("fileInput").addEventListener("change", function(e) {
       return { text: line, now };
     });
 
-    selectedTaskIndex = null;
     renderTasks();
   };
 
@@ -207,18 +197,6 @@ document.getElementById("fileInput").addEventListener("change", function(e) {
 
 document.getElementById("taskInput").addEventListener("keypress", function(e) {
   if (e.key === "Enter") addTask();
-});
-
-/* Keyboard Shortcut: N for NOW */
-document.addEventListener("keydown", function(e) {
-
-  if (document.activeElement.id === "taskInput") return;
-  if (selectedTaskIndex === null) return;
-
-  if (e.key.toLowerCase() === "n") {
-    markNow();
-  }
-
 });
 
 renderTasks();
