@@ -144,9 +144,11 @@ body {
   pointer-events: none;
 }
 
+/* Button colors */
 .task-controls button.pinned svg,
-.task-controls button.doLater svg {
-  fill: #fff; /* default inactive color */
+.task-controls button.doLater svg,
+.task-controls button.deleteBtn svg {
+  fill: #fff; /* default white for pinned, doLater, delete */
 }
 
 .task-controls button.pinned.active svg,
@@ -287,7 +289,8 @@ function renderTasks() {
     };
 
     const delBtn = document.createElement('button');
-    delBtn.textContent = '×';
+    delBtn.classList.add('deleteBtn');
+    delBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6"/></svg>';
     delBtn.onclick = () => {
       if(!confirm("Are you sure you want to delete this task?")) return;
       tasks = tasks.filter(t => t.id !== task.id);
