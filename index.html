@@ -57,19 +57,20 @@ body {
   margin-bottom: 6px;
 }
 
+/* -------- COMPACT TOOLBAR -------- */
 .toolbar {
   width: 92%;
   max-width: 480px;
   display: flex;
-  gap: 6px;
-  margin: 10px 0 6px;
+  gap: 4px;
+  margin: 6px 0;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* single line */
 }
 
 .toolbar button {
-  padding: 6px 10px;
-  font-size: 14px;
+  padding: 4px 8px; /* smaller padding */
+  font-size: 12px;  /* smaller font */
   font-weight: 600;
   border: none;
   border-radius: 10px;
@@ -136,7 +137,7 @@ body {
   justify-content: center;
   align-items: center;
   padding: 0;
-  color: #ffffff; /* default white */
+  color: #ffffff;
 }
 
 .task-controls button svg {
@@ -145,7 +146,6 @@ body {
   pointer-events: none;
 }
 
-/* Force icons to follow button color */
 .task-controls button svg path,
 .task-controls button svg line,
 .task-controls button svg polyline {
@@ -153,10 +153,9 @@ body {
   fill: currentColor;
 }
 
-/* Active state for star + do later */
 .task-controls button.pinned.active,
 .task-controls button.doLater.active {
-  color: #38bdf8; /* brighter calm blue */
+  color: #38bdf8;
 }
 </style>
 </head>
@@ -167,8 +166,8 @@ body {
 
 <div class="toolbar">
   <button id="addTaskBtn">➕ Add</button>
-  <button id="exportTasksBtn">⬆️ Export Tasks</button>
-  <button id="importTasksBtn">⬇️ Import Tasks</button>
+  <button id="exportTasksBtn">⬆️ Export</button>
+  <button id="importTasksBtn">⬇️ Import</button>
   <button id="filterPinnedBtn">⭐ Pinned</button>
   <button id="filterDoLaterBtn">⤵️ Do Later</button>
   <button id="filterCompletedBtn">✔️ Completed</button>
@@ -263,7 +262,6 @@ function renderTasks() {
   if(filters.completed) filteredTasks = filteredTasks.filter(t => t.completed);
 
   filteredTasks.sort((a,b) => {
-    // pinned first, then normal, then doLater
     if(a.pinned && !b.pinned) return -1;
     if(!a.pinned && b.pinned) return 1;
     if(a.doLater && !b.doLater) return 1;
@@ -283,7 +281,6 @@ function renderTasks() {
     span.style.fontWeight = task.pinned ? 'bold' : 'normal';
     span.style.textTransform = task.pinned ? 'uppercase' : 'none';
 
-    // Prepend markers
     let markers = [];
     if(task.pinned) markers.push('[Pinned]');
     if(task.doLater) markers.push('[Do Later]');
@@ -293,7 +290,6 @@ function renderTasks() {
     const controls = document.createElement('div');
     controls.className = 'task-controls';
 
-    // ⭐ Pinned button
     const pinBtn = document.createElement('button');
     pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
     pinBtn.classList.toggle('pinned', task.pinned);
@@ -304,7 +300,6 @@ function renderTasks() {
       renderTasks();
     };
 
-    // ⤵️ Do Later button
     const doLaterBtn = document.createElement('button');
     doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
     doLaterBtn.classList.toggle('doLater', task.doLater);
@@ -367,7 +362,7 @@ function addTask() {
 
 addTaskBtn.onclick = addTask;
 
-// -------- EXPORT / IMPORT FEATURE --------
+// EXPORT / IMPORT
 exportTasksBtn.onclick = () => {
   const text = tasks.map(t => t.text).join('\n');
   const blob = new Blob([text], {type: 'text/plain'});
@@ -395,19 +390,17 @@ importFileInput.addEventListener('change', (e) => {
   importFileInput.value = '';
 });
 
-// -------- FILTER BUTTONS --------
+// FILTER BUTTONS
 filterPinnedBtn.onclick = () => {
   filters.pinned = !filters.pinned;
   filterPinnedBtn.classList.toggle('active', filters.pinned);
   renderTasks();
 };
-
 filterDoLaterBtn.onclick = () => {
   filters.doLater = !filters.doLater;
   filterDoLaterBtn.classList.toggle('active', filters.doLater);
   renderTasks();
 };
-
 filterCompletedBtn.onclick = () => {
   filters.completed = !filters.completed;
   filterCompletedBtn.classList.toggle('active', filters.completed);
