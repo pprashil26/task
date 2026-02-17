@@ -153,7 +153,7 @@ body {
   fill: currentColor;
 }
 
-/* Active state for star + do later */
+/* Active state for pinned/do later */
 .task-controls button.pinned.active,
 .task-controls button.doLater.active {
   color: #38bdf8;
@@ -170,9 +170,6 @@ body {
   <button id="exportTasksBtn">Export</button>
   <button id="importTasksBtn">Import</button>
   <button id="filterPinnedBtn">Now</button>
-  <button id="filterDoLaterBtn">Later</button>
-  <button id="filterCompletedBtn">Done</button>
-  <button id="filterCheckBtn">Check</button>
   <input type="file" id="importFileInput" style="display:none;">
 </div>
 
@@ -192,17 +189,11 @@ const importTasksBtn = document.getElementById('importTasksBtn');
 const importFileInput = document.getElementById('importFileInput');
 
 const filterPinnedBtn = document.getElementById('filterPinnedBtn');
-const filterDoLaterBtn = document.getElementById('filterDoLaterBtn');
-const filterCompletedBtn = document.getElementById('filterCompletedBtn');
-const filterCheckBtn = document.getElementById('filterCheckBtn');
 
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 
 let filters = {
-  pinned: false,
-  doLater: false,
-  completed: false,
-  check: false
+  pinned: false
 };
 
 function saveTasks() {
@@ -261,15 +252,7 @@ function renderTasks() {
   taskList.innerHTML = '';
 
   let filteredTasks = [...tasks];
-
-  // Apply filters
-  if(filters.check) {
-    filteredTasks = filteredTasks.filter(t => !t.pinned && !t.doLater && !t.completed);
-  } else {
-    if(filters.pinned) filteredTasks = filteredTasks.filter(t => t.pinned);
-    if(filters.doLater) filteredTasks = filteredTasks.filter(t => t.doLater);
-    if(filters.completed) filteredTasks = filteredTasks.filter(t => t.completed);
-  }
+  if(filters.pinned) filteredTasks = filteredTasks.filter(t => t.pinned);
 
   filteredTasks.sort((a,b) => {
     if(a.pinned && !b.pinned) return -1;
@@ -286,8 +269,7 @@ function renderTasks() {
 
     const span = document.createElement('span');
     span.className = 'task-text';
-    let taskText = task.text;
-    span.innerHTML = parseTagsHTML(taskText);
+    span.innerHTML = parseTagsHTML(task.text);
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
@@ -394,46 +376,10 @@ importFileInput.addEventListener('change', (e) => {
   importFileInput.value = '';
 });
 
-// -------- FILTER BUTTONS --------
+// -------- NOW FILTER BUTTON --------
 filterPinnedBtn.onclick = () => {
   filters.pinned = !filters.pinned;
-  filters.check = false;
   filterPinnedBtn.classList.toggle('active', filters.pinned);
-  filterDoLaterBtn.classList.remove('active');
-  filterCompletedBtn.classList.remove('active');
-  filterCheckBtn.classList.remove('active');
-  renderTasks();
-};
-
-filterDoLaterBtn.onclick = () => {
-  filters.doLater = !filters.doLater;
-  filters.check = false;
-  filterPinnedBtn.classList.remove('active');
-  filterDoLaterBtn.classList.toggle('active', filters.doLater);
-  filterCompletedBtn.classList.remove('active');
-  filterCheckBtn.classList.remove('active');
-  renderTasks();
-};
-
-filterCompletedBtn.onclick = () => {
-  filters.completed = !filters.completed;
-  filters.check = false;
-  filterPinnedBtn.classList.remove('active');
-  filterDoLaterBtn.classList.remove('active');
-  filterCompletedBtn.classList.toggle('active', filters.completed);
-  filterCheckBtn.classList.remove('active');
-  renderTasks();
-};
-
-filterCheckBtn.onclick = () => {
-  filters.check = !filters.check;
-  filters.pinned = false;
-  filters.doLater = false;
-  filters.completed = false;
-  filterPinnedBtn.classList.remove('active');
-  filterDoLaterBtn.classList.remove('active');
-  filterCompletedBtn.classList.remove('active');
-  filterCheckBtn.classList.toggle('active', filters.check);
   renderTasks();
 };
 
