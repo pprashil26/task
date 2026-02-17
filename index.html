@@ -40,6 +40,7 @@ body {
   white-space: pre-wrap;
   overflow-wrap: break-word;
   min-height: 32px;
+  text-transform: uppercase; /* all tasks in caps */
 }
 
 #taskInput:focus {
@@ -107,7 +108,7 @@ body {
   flex: 1;
   word-break: break-word;
   margin-right: 6px;
-  text-transform: uppercase; /* <-- ADDED for all CAPS */
+  text-transform: uppercase; /* all tasks in caps */
 }
 
 .task-text .tag {
@@ -146,6 +147,7 @@ body {
   pointer-events: none;
 }
 
+/* Force icons to follow button color */
 .task-controls button svg path,
 .task-controls button svg line,
 .task-controls button svg polyline {
@@ -153,6 +155,7 @@ body {
   fill: currentColor;
 }
 
+/* Active state for pinned/do later */
 .task-controls button.pinned.active,
 .task-controls button.doLater.active {
   color: #38bdf8;
@@ -191,7 +194,9 @@ const filterPinnedBtn = document.getElementById('filterPinnedBtn');
 
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 
-let filters = { pinned: false };
+let filters = {
+  pinned: false
+};
 
 function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -247,6 +252,7 @@ function createTask(text) {
 
 function renderTasks() {
   taskList.innerHTML = '';
+
   let filteredTasks = [...tasks];
   if(filters.pinned) filteredTasks = filteredTasks.filter(t => t.pinned);
 
@@ -265,11 +271,12 @@ function renderTasks() {
 
     const span = document.createElement('span');
     span.className = 'task-text';
-    span.innerHTML = parseTagsHTML(task.text); // will appear in all CAPS due to CSS
+    span.innerHTML = parseTagsHTML(task.text);
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
 
+    // ⭐ Pinned button
     const pinBtn = document.createElement('button');
     pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
     pinBtn.classList.toggle('pinned', task.pinned);
@@ -280,6 +287,7 @@ function renderTasks() {
       renderTasks();
     };
 
+    // ⤵️ Do Later button
     const doLaterBtn = document.createElement('button');
     doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
     doLaterBtn.classList.toggle('doLater', task.doLater);
@@ -342,8 +350,16 @@ function addTask() {
 
 addTaskBtn.onclick = addTask;
 
+// -------- EXPORT / IMPORT FEATURE (updated) --------
 exportTasksBtn.onclick = () => {
-  const text = tasks.map(t => t.text).join('\n');
+  const text = tasks.map(t => {
+    let markers = [];
+    if(t.pinned) markers.push('[Pinned]');
+    if(t.doLater) markers.push('[Do Later]');
+    if(t.completed) markers.push('[Completed]');
+    let taskText = t.text.toUpperCase(); // caps
+    return (markers.length ? markers.join(' ') + ' ' : '') + taskText;
+  }).join('\n');
   const blob = new Blob([text], {type: 'text/plain'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -361,7 +377,18 @@ importFileInput.addEventListener('change', (e) => {
   const reader = new FileReader();
   reader.onload = () => {
     const lines = reader.result.split('\n').map(l => l.trim()).filter(l => l);
-    lines.forEach(line => tasks.unshift(createTask(line)));
+    lines.forEach(line => {
+      let pinned = line.includes('[Pinned]');
+      let doLater = line.includes('[Do Later]');
+      let completed = line.includes('[Completed]');
+      // Remove markers from text
+      let text = line.replace(/\[Pinned\]|\[Do Later\]|\[Completed\]/g, '').trim();
+      let task = createTask(text);
+      task.pinned = pinned;
+      task.doLater = doLater;
+      task.completed = completed;
+      tasks.unshift(task);
+    });
     saveTasks();
     renderTasks();
   };
@@ -369,6 +396,7 @@ importFileInput.addEventListener('change', (e) => {
   importFileInput.value = '';
 });
 
+// -------- NOW FILTER BUTTON --------
 filterPinnedBtn.onclick = () => {
   filters.pinned = !filters.pinned;
   filterPinnedBtn.classList.toggle('active', filters.pinned);
