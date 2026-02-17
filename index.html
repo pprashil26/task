@@ -146,11 +146,11 @@ body {
 }
 
 .task-controls button.pinned svg {
-  fill: #fce77d;
+  fill: #fce77d; /* keep pinned color as before */
 }
 
 .task-controls button.doLater svg {
-  fill: #f0f0f0; /* visible by default */
+  fill: #fff; /* default visible */
 }
 
 .task-controls button.doLater.active svg {
@@ -263,7 +263,6 @@ function renderTasks() {
     pinBtn.classList.toggle('pinned', task.pinned);
     pinBtn.onclick = () => {
       task.pinned = !task.pinned;
-      if(!task.pinned) task.doLater = false; // optional: unpin removes doLater
       saveTasks();
       renderTasks();
     };
