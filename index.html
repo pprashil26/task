@@ -162,9 +162,9 @@ body {
 
 <div class="toolbar">
   <button id="addTaskBtn">➕ Add</button>
-  <button id="exportTasksBtn">⬆️ Export Tasks</button>
-  <button id="importTasksBtn">⬇️ Import Tasks</button>
-  <input type="file" id="importFileInput" style="display:none;">
+  <button id="exportTasksBtn">⬆ Export Tasks</button>
+  <button id="importTasksBtn">⬇ Import Tasks</button>
+  <input type="file" id="importFileInput" accept=".txt,.md" style="display:none">
 </div>
 
 <div id="taskList"></div>
@@ -175,12 +175,11 @@ body {
 const taskInput = document.getElementById('taskInput');
 const charCount = document.getElementById('charCount');
 const addTaskBtn = document.getElementById('addTaskBtn');
-const taskList = document.getElementById('taskList');
-const mirror = document.getElementById('mirror');
-
 const exportTasksBtn = document.getElementById('exportTasksBtn');
 const importTasksBtn = document.getElementById('importTasksBtn');
 const importFileInput = document.getElementById('importFileInput');
+const taskList = document.getElementById('taskList');
+const mirror = document.getElementById('mirror');
 
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 
@@ -253,7 +252,9 @@ function renderTasks() {
     const span = document.createElement('span');
     span.className = 'task-text';
     let taskText = task.text;
-    if(task.pinned) taskText = taskText.toUpperCase();
+    if(task.pinned) taskText = '[Pinned] ' + taskText.toUpperCase();
+    else if(task.doLater) taskText = '[Do Later] ' + taskText;
+    else if(task.completed) taskText = '[Completed] ' + taskText;
     span.innerHTML = parseTagsHTML(taskText);
     span.style.fontWeight = task.pinned ? 'bold' : 'normal';
     span.style.textTransform = task.pinned ? 'uppercase' : 'none';
@@ -261,7 +262,6 @@ function renderTasks() {
     const controls = document.createElement('div');
     controls.className = 'task-controls';
 
-    // ⭐ Pinned button
     const pinBtn = document.createElement('button');
     pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
     pinBtn.classList.toggle('pinned', task.pinned);
@@ -272,9 +272,10 @@ function renderTasks() {
       renderTasks();
     };
 
-    // ⤵️ Do Later button
     const doLaterBtn = document.createElement('button');
-    doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
+    doLaterBtn.innerHTML = `<svg viewBox="0 0 24 24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 4c0 4 0 16 0 16m0 0l-6-6m6 6l6-6"/>
+    </svg>`;
     doLaterBtn.classList.toggle('doLater', task.doLater);
     doLaterBtn.classList.toggle('active', task.doLater);
     doLaterBtn.onclick = () => {
@@ -335,10 +336,17 @@ function addTask() {
 
 addTaskBtn.onclick = addTask;
 
-// -------- EXPORT / IMPORT FEATURE --------
+// --- EXPORT FUNCTION ---
 exportTasksBtn.onclick = () => {
-  const text = tasks.map(t => t.text).join('\n');
-  const blob = new Blob([text], {type: 'text/plain'});
+  if(!tasks.length) return alert('No tasks to export');
+  const data = tasks.map(t => {
+    let prefix = '';
+    if(t.pinned) prefix = '[Pinned] ';
+    else if(t.doLater) prefix = '[Do Later] ';
+    else if(t.completed) prefix = '[Completed] ';
+    return prefix + t.text;
+  }).join('\n');
+  const blob = new Blob([data], {type: 'text/plain'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -347,21 +355,35 @@ exportTasksBtn.onclick = () => {
   URL.revokeObjectURL(url);
 };
 
+// --- IMPORT FUNCTION ---
 importTasksBtn.onclick = () => importFileInput.click();
 
-importFileInput.addEventListener('change', (e) => {
+importFileInput.onchange = (e) => {
   const file = e.target.files[0];
   if(!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
-    const lines = reader.result.split('\n').map(l => l.trim()).filter(l => l);
-    lines.forEach(line => tasks.unshift(createTask(line)));
+  reader.onload = (ev) => {
+    const lines = ev.target.result.split('\n');
+    lines.forEach(line => {
+      let pinned=false, doLater=false, completed=false;
+      let text = line.trim();
+      if(text.startsWith('[Pinned]')) { pinned=true; text=text.replace('[Pinned]','').trim(); }
+      else if(text.startsWith('[Do Later]')) { doLater=true; text=text.replace('[Do Later]','').trim(); }
+      else if(text.startsWith('[Completed]')) { completed=true; text=text.replace('[Completed]','').trim(); }
+      if(text) {
+        const t = createTask(text);
+        t.pinned = pinned;
+        t.doLater = doLater;
+        t.completed = completed;
+        tasks.unshift(t);
+      }
+    });
     saveTasks();
     renderTasks();
+    importFileInput.value = '';
   };
   reader.readAsText(file);
-  importFileInput.value = '';
-});
+};
 
 renderTasks();
 updateCharCount();
