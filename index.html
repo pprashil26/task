@@ -40,7 +40,7 @@ body {
   white-space: pre-wrap;
   overflow-wrap: break-word;
   min-height: 32px;
-  text-transform: uppercase;
+  text-transform: uppercase; /* all tasks in caps */
 }
 
 #taskInput:focus {
@@ -69,6 +69,7 @@ body {
 
 .toolbar button, .toolbar input[type="text"] {
   font-size: 12px;
+  font-weight: 400;
   text-transform: uppercase;
   border: none;
   border-radius: 10px;
@@ -78,11 +79,14 @@ body {
 }
 
 .toolbar button.active {
-  background: #2563eb;
+  background: #2563eb !important; /* fixed specificity for NOW button */
 }
 
 .toolbar input[type="text"] {
   flex: 1;
+  background: #4a3838;
+  color: #fff;
+  padding: 4px 8px;
 }
 
 #taskList {
@@ -94,10 +98,11 @@ body {
 .task-item {
   display: flex;
   align-items: center;
-  padding: 6px 4px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  justify-content: space-between;
+  padding: 2px 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
   font-size: 14px;
-  gap: 6px;
 }
 
 .task-item.completed .task-text {
@@ -108,8 +113,8 @@ body {
 .task-text {
   flex: 1;
   word-break: break-word;
+  margin-right: 6px;
   text-transform: uppercase;
-  line-height: 1.3;
 }
 
 .task-text .tag {
@@ -119,15 +124,15 @@ body {
 
 .task-date {
   font-size: 10px;
-  color: #aaa;
+  color: #ccc;
+  margin-left: 6px;
   white-space: nowrap;
-  margin-left: 4px;
 }
 
 .task-controls {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
 }
 
 .task-controls input[type="checkbox"] {
@@ -140,8 +145,8 @@ body {
   border: none;
   background: transparent;
   border-radius: 50%;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -151,18 +156,20 @@ body {
 }
 
 .task-controls button svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   pointer-events: none;
 }
 
 .task-controls button svg path,
-.task-controls button svg line {
+.task-controls button svg line,
+.task-controls button svg polyline {
   stroke: currentColor;
   fill: currentColor;
 }
 
-.task-controls button.pinned.active {
+.task-controls button.pinned.active,
+.task-controls button.doLater.active {
   color: #38bdf8;
 }
 </style>
@@ -182,7 +189,8 @@ body {
 </div>
 
 <div id="taskList"></div>
-<div id="mirror" style="position:absolute; top:-9999px; left:-9999px; visibility:hidden; white-space: pre-wrap;"></div>
+
+<div id="mirror" style="position:absolute; top:-9999px; left:-9999px; visibility:hidden; white-space: pre-wrap; word-wrap: break-word;"></div>
 
 <script>
 const taskInput = document.getElementById('taskInput');
@@ -204,6 +212,7 @@ let searchQuery = '';
 function saveTasks() { localStorage.setItem('tasks', JSON.stringify(tasks)); }
 function escapeHTML(str) { return str.replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 function parseTagsHTML(text) { return escapeHTML(text).replace(/(#\w+)/g, '<span class="tag">$1</span>'); }
+
 function updateCharCount() { charCount.textContent = 160 - taskInput.value.length; }
 
 function autoGrow() {
@@ -211,47 +220,38 @@ function autoGrow() {
   mirror.style.font = window.getComputedStyle(taskInput).font;
   mirror.style.lineHeight = window.getComputedStyle(taskInput).lineHeight;
   mirror.style.padding = window.getComputedStyle(taskInput).padding;
+  mirror.style.border = window.getComputedStyle(taskInput).border;
   mirror.textContent = taskInput.value || taskInput.placeholder;
   taskInput.style.height = mirror.scrollHeight + 'px';
 }
 
 autoGrow();
 taskInput.addEventListener('input', () => { updateCharCount(); autoGrow(); });
-taskInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    addTask();
-  }
-});
+taskInput.addEventListener('keydown', (e) => { if(e.key==='Enter'){if(!e.shiftKey){e.preventDefault();addTask();}} });
 
 function createTask(text) {
-  return {
-    id: Date.now(),
-    text: text.trim(),
-    tags: (text.match(/#\w+/g) || []).map(t => t.trim()),
-    completed: false,
-    pinned: false,
-    createdAt: Date.now()
-  };
+  return { id: Date.now(), text: text.trim(), tags: (text.match(/#\w+/g)||[]).map(t=>t.trim()), completed:false, pinned:false, doLater:false, createdAt:Date.now() };
 }
 
 function renderTasks() {
   taskList.innerHTML = '';
   let filteredTasks = [...tasks];
 
-  if (filters.pinned) filteredTasks = filteredTasks.filter(t => t.pinned);
-  if (searchQuery) filteredTasks = filteredTasks.filter(t => t.text.toUpperCase().includes(searchQuery.toUpperCase()));
+  if(filters.pinned) filteredTasks = filteredTasks.filter(t => t.pinned);
+  if(searchQuery) filteredTasks = filteredTasks.filter(t => t.text.toUpperCase().includes(searchQuery.toUpperCase()));
 
-  filteredTasks.sort((a, b) => {
-    if (a.pinned && !b.pinned) return -1;
-    if (!a.pinned && b.pinned) return 1;
+  filteredTasks.sort((a,b) => {
+    if(a.pinned&&!b.pinned) return -1;
+    if(!a.pinned&&b.pinned) return 1;
+    if(a.doLater&&!b.doLater) return 1;
+    if(!a.doLater&&b.doLater) return -1;
     return b.createdAt - a.createdAt;
   });
 
   filteredTasks.forEach(task => {
     const div = document.createElement('div');
     div.className = 'task-item';
-    if (task.completed) div.classList.add('completed');
+    if(task.completed) div.classList.add('completed');
 
     const span = document.createElement('span');
     span.className = 'task-text';
@@ -260,35 +260,44 @@ function renderTasks() {
     const dateSpan = document.createElement('span');
     dateSpan.className = 'task-date';
     const d = new Date(task.createdAt);
-    dateSpan.textContent = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    dateSpan.textContent = d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
 
     const pinBtn = document.createElement('button');
     pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
+    pinBtn.classList.toggle('pinned', task.pinned);
     pinBtn.classList.toggle('active', task.pinned);
-    pinBtn.onclick = () => { task.pinned = !task.pinned; saveTasks(); renderTasks(); };
+    pinBtn.onclick = ()=>{task.pinned=!task.pinned;saveTasks();renderTasks();};
+
+    const doLaterBtn = document.createElement('button');
+    doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
+    doLaterBtn.classList.toggle('doLater', task.doLater);
+    doLaterBtn.classList.toggle('active', task.doLater);
+    doLaterBtn.onclick = ()=>{task.doLater=!task.doLater;saveTasks();renderTasks();};
 
     const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
+    checkbox.type='checkbox';
     checkbox.checked = task.completed;
-    checkbox.onclick = () => { task.completed = !task.completed; saveTasks(); renderTasks(); };
-
-    const copyBtn = document.createElement('button');
-    copyBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 2h10a2 2 0 0 1 2 2v14h-2V4H6V2zM4 6h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm2 2v12h10V8H6z"/></svg>';
-    copyBtn.onclick = () => navigator.clipboard.writeText(task.text.toUpperCase());
+    checkbox.onclick = ()=>{task.completed=!task.completed;saveTasks();renderTasks();};
 
     const delBtn = document.createElement('button');
-    delBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6"/></svg>';
-    delBtn.onclick = () => {
-      if (!confirm("Are you sure you want to delete this task?")) return;
-      tasks = tasks.filter(t => t.id !== task.id);
+    delBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6"/></svg>';
+    delBtn.onclick = ()=>{
+      if(!confirm("Are you sure you want to delete this task?")) return;
+      tasks = tasks.filter(t => t.id!==task.id);
       saveTasks();
       renderTasks();
     };
 
+    const copyBtn = document.createElement('button');
+    copyBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M6 2h10a2 2 0 0 1 2 2v14h-2V4H6V2zM4 6h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm2 2v12h10V8H6z"/></svg>';
+    copyBtn.title="Copy task";
+    copyBtn.onclick = ()=>{navigator.clipboard.writeText(task.text.toUpperCase());};
+
     controls.appendChild(pinBtn);
+    controls.appendChild(doLaterBtn);
     controls.appendChild(checkbox);
     controls.appendChild(copyBtn);
     controls.appendChild(delBtn);
@@ -301,37 +310,69 @@ function renderTasks() {
 }
 
 function resetTaskInput() {
-  taskInput.value = '';
-  updateCharCount();
-  requestAnimationFrame(() => {
-    taskInput.scrollTop = 0;
-    taskInput.selectionStart = taskInput.selectionEnd = 0;
-    autoGrow();
-    taskInput.focus();
-  });
+  taskInput.value=''; updateCharCount();
+  requestAnimationFrame(()=>{taskInput.scrollTop=0;taskInput.selectionStart=taskInput.selectionEnd=0;autoGrow();taskInput.focus();});
 }
 
 function addTask() {
-  const text = taskInput.value.trim();
-  if (!text) return;
+  const text=taskInput.value.trim();
+  if(!text) return;
   tasks.unshift(createTask(text));
   saveTasks();
   renderTasks();
   resetTaskInput();
 }
 
-addTaskBtn.onclick = addTask;
+addTaskBtn.onclick=addTask;
 
-filterPinnedBtn.onclick = () => {
-  filters.pinned = !filters.pinned;
-  filterPinnedBtn.classList.toggle('active', filters.pinned);
+// -------- EXPORT / IMPORT FIXED --------
+exportTasksBtn.onclick=()=>{
+  const text=tasks.map(t=>{
+    let markers=[];
+    if(t.pinned) markers.push('[Pinned]');
+    if(t.doLater) markers.push('[Do Later]');
+    if(t.completed) markers.push('[Completed]');
+    let taskText=t.text.toUpperCase();
+    return (markers.length?markers.join(' ')+' ':'')+taskText;
+  }).join('\n');
+  const blob=new Blob([text],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='tasks.txt'; a.click();
+  URL.revokeObjectURL(url);
+};
+
+importTasksBtn.onclick=()=>importFileInput.click();
+
+importFileInput.addEventListener('change',(e)=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const lines=reader.result.split('\n').map(l=>l.trim()).filter(l=>l);
+    lines.forEach(line=>{
+      let pinned=line.includes('[Pinned]');
+      let doLater=line.includes('[Do Later]');
+      let completed=line.includes('[Completed]');
+      let text=line.replace(/\[Pinned\]|\[Do Later\]|\[Completed\]/g,'').trim();
+      let task=createTask(text);
+      task.pinned=pinned; task.doLater=doLater; task.completed=completed;
+      tasks.unshift(task);
+    });
+    saveTasks();
+    renderTasks();
+  };
+  reader.readAsText(file); importFileInput.value='';
+});
+
+// -------- FILTER PINNED --------
+filterPinnedBtn.onclick=()=>{
+  filters.pinned=!filters.pinned;
+  filterPinnedBtn.classList.toggle('active',filters.pinned);
   renderTasks();
 };
 
-searchInput.addEventListener('input', () => {
-  searchQuery = searchInput.value;
-  renderTasks();
-});
+// -------- SEARCH --------
+searchInput.addEventListener('input',()=>{searchQuery=searchInput.value; renderTasks();});
 
 renderTasks();
 updateCharCount();
