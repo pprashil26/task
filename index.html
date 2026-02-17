@@ -67,26 +67,20 @@ body {
   align-items: center;
 }
 
-.toolbar button, .toolbar input[type="text"] {
+.toolbar button {
+  padding: 4px 8px;
   font-size: 12px;
   font-weight: 400;
   text-transform: uppercase;
   border: none;
   border-radius: 10px;
-  padding: 4px 8px;
   background: #4a3838;
   color: #fff;
+  cursor: pointer;
 }
 
 .toolbar button.active {
   background: #2563eb;
-}
-
-.toolbar input[type="text"] {
-  flex: 1;
-  background: #4a3838;
-  color: #fff;
-  padding: 4px 8px;
 }
 
 #taskList {
@@ -114,7 +108,7 @@ body {
   flex: 1;
   word-break: break-word;
   margin-right: 6px;
-  text-transform: uppercase;
+  text-transform: uppercase; /* all tasks in caps */
 }
 
 .task-text .tag {
@@ -124,9 +118,8 @@ body {
 
 .task-date {
   font-size: 10px;
-  color: #ccc;
+  color: #ddd;
   margin-left: 6px;
-  white-space: nowrap;
 }
 
 .task-controls {
@@ -152,7 +145,6 @@ body {
   align-items: center;
   padding: 0;
   color: #ffffff;
-  cursor: pointer;
 }
 
 .task-controls button svg {
@@ -161,6 +153,7 @@ body {
   pointer-events: none;
 }
 
+/* Force icons to follow button color */
 .task-controls button svg path,
 .task-controls button svg line,
 .task-controls button svg polyline {
@@ -168,9 +161,21 @@ body {
   fill: currentColor;
 }
 
+/* Active state for pinned/do later */
 .task-controls button.pinned.active,
 .task-controls button.doLater.active {
   color: #38bdf8;
+}
+
+/* --- Focus Mode --- */
+body.focus-mode #taskList,
+body.focus-mode #charCount,
+body.focus-mode #mirror {
+  display: none;
+}
+
+body.focus-mode #taskInput {
+  margin-top: 40vh; /* vertically center input */
 }
 </style>
 </head>
@@ -184,12 +189,12 @@ body {
   <button id="exportTasksBtn">Export</button>
   <button id="importTasksBtn">Import</button>
   <button id="filterPinnedBtn">Now</button>
-  <input type="text" id="searchInput" placeholder="Search…">
+  <input type="text" id="searchInput" placeholder="Search…" style="flex:1; padding:4px 6px; border-radius:10px; border:none; font-size:12px;">
   <input type="file" id="importFileInput" style="display:none;">
+  <button id="focusBtn">Focus</button>
 </div>
 
 <div id="taskList"></div>
-
 <div id="mirror" style="position:absolute; top:-9999px; left:-9999px; visibility:hidden; white-space: pre-wrap; word-wrap: break-word;"></div>
 
 <script>
@@ -202,18 +207,34 @@ const mirror = document.getElementById('mirror');
 const exportTasksBtn = document.getElementById('exportTasksBtn');
 const importTasksBtn = document.getElementById('importTasksBtn');
 const importFileInput = document.getElementById('importFileInput');
+
 const filterPinnedBtn = document.getElementById('filterPinnedBtn');
 const searchInput = document.getElementById('searchInput');
+const focusBtn = document.getElementById('focusBtn');
 
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 let filters = { pinned: false };
-let searchQuery = '';
 
-function saveTasks() { localStorage.setItem('tasks', JSON.stringify(tasks)); }
-function escapeHTML(str) { return str.replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
-function parseTagsHTML(text) { return escapeHTML(text).replace(/(#\w+)/g, '<span class="tag">$1</span>'); }
+function saveTasks() {
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+}
 
-function updateCharCount() { charCount.textContent = 160 - taskInput.value.length; }
+function escapeHTML(str) {
+  return str.replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+}
+
+function parseTagsHTML(text) {
+  return escapeHTML(text).replace(/(#\w+)/g, '<span class="tag">$1</span>');
+}
+
+function formatDate(ts) {
+  const d = new Date(ts);
+  return `${d.getDate()}/${d.getMonth()+1}`; // short format day/month
+}
+
+function updateCharCount() {
+  charCount.textContent = 160 - taskInput.value.length;
+}
 
 function autoGrow() {
   mirror.style.width = taskInput.offsetWidth + 'px';
@@ -226,25 +247,45 @@ function autoGrow() {
 }
 
 autoGrow();
-taskInput.addEventListener('input', () => { updateCharCount(); autoGrow(); });
-taskInput.addEventListener('keydown', (e) => { if(e.key==='Enter'){if(!e.shiftKey){e.preventDefault();addTask();}} });
+taskInput.addEventListener('input', () => {
+  updateCharCount();
+  autoGrow();
+});
+
+taskInput.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') {
+    if(e.shiftKey) return;
+    e.preventDefault();
+    addTask();
+  }
+});
 
 function createTask(text) {
-  return { id: Date.now(), text: text.trim(), tags: (text.match(/#\w+/g)||[]).map(t=>t.trim()), completed:false, pinned:false, doLater:false, createdAt:Date.now() };
+  return {
+    id: Date.now(),
+    text: text.trim(),
+    tags: (text.match(/#\w+/g) || []).map(t => t.trim()),
+    completed: false,
+    pinned: false,
+    doLater: false,
+    createdAt: Date.now()
+  };
 }
 
 function renderTasks() {
   taskList.innerHTML = '';
-  let filteredTasks = [...tasks];
 
+  let filteredTasks = [...tasks];
   if(filters.pinned) filteredTasks = filteredTasks.filter(t => t.pinned);
-  if(searchQuery) filteredTasks = filteredTasks.filter(t => t.text.toUpperCase().includes(searchQuery.toUpperCase()));
+
+  const searchTerm = searchInput.value.trim().toUpperCase();
+  if(searchTerm) filteredTasks = filteredTasks.filter(t => t.text.toUpperCase().includes(searchTerm));
 
   filteredTasks.sort((a,b) => {
-    if(a.pinned&&!b.pinned) return -1;
-    if(!a.pinned&&b.pinned) return 1;
-    if(a.doLater&&!b.doLater) return 1;
-    if(!a.doLater&&b.doLater) return -1;
+    if(a.pinned && !b.pinned) return -1;
+    if(!a.pinned && b.pinned) return 1;
+    if(a.doLater && !b.doLater) return 1;
+    if(!a.doLater && b.doLater) return -1;
     return b.createdAt - a.createdAt;
   });
 
@@ -259,8 +300,7 @@ function renderTasks() {
 
     const dateSpan = document.createElement('span');
     dateSpan.className = 'task-date';
-    const d = new Date(task.createdAt);
-    dateSpan.textContent = d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    dateSpan.textContent = formatDate(task.createdAt);
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
@@ -269,32 +309,44 @@ function renderTasks() {
     pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
     pinBtn.classList.toggle('pinned', task.pinned);
     pinBtn.classList.toggle('active', task.pinned);
-    pinBtn.onclick = ()=>{task.pinned=!task.pinned;saveTasks();renderTasks();};
+    pinBtn.onclick = () => {
+      task.pinned = !task.pinned;
+      saveTasks();
+      renderTasks();
+    };
 
     const doLaterBtn = document.createElement('button');
     doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
     doLaterBtn.classList.toggle('doLater', task.doLater);
     doLaterBtn.classList.toggle('active', task.doLater);
-    doLaterBtn.onclick = ()=>{task.doLater=!task.doLater;saveTasks();renderTasks();};
+    doLaterBtn.onclick = () => {
+      task.doLater = !task.doLater;
+      saveTasks();
+      renderTasks();
+    };
 
     const checkbox = document.createElement('input');
-    checkbox.type='checkbox';
+    checkbox.type = 'checkbox';
     checkbox.checked = task.completed;
-    checkbox.onclick = ()=>{task.completed=!task.completed;saveTasks();renderTasks();};
-
-    const delBtn = document.createElement('button');
-    delBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6"/></svg>';
-    delBtn.onclick = ()=>{
-      if(!confirm("Are you sure you want to delete this task?")) return;
-      tasks = tasks.filter(t => t.id!==task.id);
+    checkbox.onclick = () => {
+      task.completed = !task.completed;
       saveTasks();
       renderTasks();
     };
 
     const copyBtn = document.createElement('button');
-    copyBtn.innerHTML='<svg viewBox="0 0 24 24"><path d="M6 2h10a2 2 0 0 1 2 2v14h-2V4H6V2zM4 6h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm2 2v12h10V8H6z"/></svg>';
-    copyBtn.title="Copy task";
-    copyBtn.onclick = ()=>{navigator.clipboard.writeText(task.text.toUpperCase());};
+    copyBtn.textContent = 'C';
+    copyBtn.title = 'Copy';
+    copyBtn.onclick = () => navigator.clipboard.writeText(task.text.toUpperCase());
+
+    const delBtn = document.createElement('button');
+    delBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6"/></svg>';
+    delBtn.onclick = () => {
+      if(!confirm("Are you sure you want to delete this task?")) return;
+      tasks = tasks.filter(t => t.id !== task.id);
+      saveTasks();
+      renderTasks();
+    };
 
     controls.appendChild(pinBtn);
     controls.appendChild(doLaterBtn);
@@ -310,12 +362,18 @@ function renderTasks() {
 }
 
 function resetTaskInput() {
-  taskInput.value=''; updateCharCount();
-  requestAnimationFrame(()=>{taskInput.scrollTop=0;taskInput.selectionStart=taskInput.selectionEnd=0;autoGrow();taskInput.focus();});
+  taskInput.value = '';
+  updateCharCount();
+  requestAnimationFrame(() => {
+    taskInput.scrollTop = 0;
+    taskInput.selectionStart = taskInput.selectionEnd = 0;
+    autoGrow();
+    taskInput.focus();
+  });
 }
 
 function addTask() {
-  const text=taskInput.value.trim();
+  const text = taskInput.value.trim();
   if(!text) return;
   tasks.unshift(createTask(text));
   saveTasks();
@@ -323,53 +381,64 @@ function addTask() {
   resetTaskInput();
 }
 
-addTaskBtn.onclick=addTask;
+addTaskBtn.onclick = addTask;
 
-exportTasksBtn.onclick=()=>{
-  const text=tasks.map(t=>{
-    let markers=[];
+exportTasksBtn.onclick = () => {
+  const text = tasks.map(t => {
+    let markers = [];
     if(t.pinned) markers.push('[Pinned]');
     if(t.doLater) markers.push('[Do Later]');
     if(t.completed) markers.push('[Completed]');
-    let taskText=t.text.toUpperCase();
-    return (markers.length?markers.join(' ')+' ':'')+taskText;
+    let taskText = t.text.toUpperCase();
+    return (markers.length ? markers.join(' ') + ' ' : '') + taskText;
   }).join('\n');
-  const blob=new Blob([text],{type:'text/plain'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.download='tasks.txt'; a.click();
+  const blob = new Blob([text], {type: 'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'tasks.txt';
+  a.click();
   URL.revokeObjectURL(url);
 };
 
-importTasksBtn.onclick=()=>importFileInput.click();
+importTasksBtn.onclick = () => importFileInput.click();
 
-importFileInput.addEventListener('change',(e)=>{
-  const file=e.target.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=()=>{
-    const lines=reader.result.split('\n').map(l=>l.trim()).filter(l=>l);
-    lines.forEach(line=>{
-      let pinned=line.includes('[Pinned]');
-      let doLater=line.includes('[Do Later]');
-      let completed=line.includes('[Completed]');
-      let text=line.replace(/\[Pinned\]|\[Do Later\]|\[Completed\]/g,'').trim();
-      let task=createTask(text);
-      task.pinned=pinned; task.doLater=doLater; task.completed=completed;
+importFileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const lines = reader.result.split('\n').map(l => l.trim()).filter(l => l);
+    lines.forEach(line => {
+      let pinned = line.includes('[Pinned]');
+      let doLater = line.includes('[Do Later]');
+      let completed = line.includes('[Completed]');
+      let text = line.replace(/\[Pinned\]|\[Do Later\]|\[Completed\]/g, '').trim();
+      let task = createTask(text);
+      task.pinned = pinned;
+      task.doLater = doLater;
+      task.completed = completed;
       tasks.unshift(task);
     });
     saveTasks();
     renderTasks();
   };
-  reader.readAsText(file); importFileInput.value='';
+  reader.readAsText(file);
+  importFileInput.value = '';
 });
 
-filterPinnedBtn.onclick=()=>{
-  filters.pinned=!filters.pinned;
-  filterPinnedBtn.classList.toggle('active',filters.pinned);
+filterPinnedBtn.onclick = () => {
+  filters.pinned = !filters.pinned;
+  filterPinnedBtn.classList.toggle('active', filters.pinned);
   renderTasks();
 };
 
-searchInput.addEventListener('input',()=>{searchQuery=searchInput.value; renderTasks();});
+focusBtn.onclick = () => {
+  document.body.classList.toggle('focus-mode');
+  focusBtn.classList.toggle('active', document.body.classList.contains('focus-mode'));
+};
+
+searchInput.addEventListener('input', renderTasks);
 
 renderTasks();
 updateCharCount();
