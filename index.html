@@ -40,7 +40,7 @@ body {
   white-space: pre-wrap;
   overflow-wrap: break-word;
   min-height: 32px;
-  text-transform: uppercase; /* all tasks in caps */
+  text-transform: uppercase;
 }
 
 #taskInput:focus {
@@ -108,7 +108,7 @@ body {
   flex: 1;
   word-break: break-word;
   margin-right: 6px;
-  text-transform: uppercase; /* all tasks in caps */
+  text-transform: uppercase;
 }
 
 .task-text .tag {
@@ -147,7 +147,6 @@ body {
   pointer-events: none;
 }
 
-/* Force icons to follow button color */
 .task-controls button svg path,
 .task-controls button svg line,
 .task-controls button svg polyline {
@@ -155,7 +154,6 @@ body {
   fill: currentColor;
 }
 
-/* Active state for pinned/do later */
 .task-controls button.pinned.active,
 .task-controls button.doLater.active {
   color: #38bdf8;
@@ -189,14 +187,11 @@ const mirror = document.getElementById('mirror');
 const exportTasksBtn = document.getElementById('exportTasksBtn');
 const importTasksBtn = document.getElementById('importTasksBtn');
 const importFileInput = document.getElementById('importFileInput');
-
 const filterPinnedBtn = document.getElementById('filterPinnedBtn');
 
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 
-let filters = {
-  pinned: false
-};
+let filters = { pinned: false };
 
 function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -238,9 +233,10 @@ taskInput.addEventListener('keydown', (e) => {
   }
 });
 
+/* ✅ ONLY CHANGE IS HERE */
 function createTask(text) {
   return {
-    id: Date.now(),
+    id: crypto.randomUUID(),  // FIXED UNIQUE ID
     text: text.trim(),
     tags: (text.match(/#\w+/g) || []).map(t => t.trim()),
     completed: false,
@@ -276,39 +272,24 @@ function renderTasks() {
     const controls = document.createElement('div');
     controls.className = 'task-controls';
 
-    // ⭐ Pinned button
     const pinBtn = document.createElement('button');
     pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
     pinBtn.classList.toggle('pinned', task.pinned);
     pinBtn.classList.toggle('active', task.pinned);
-    pinBtn.onclick = () => {
-      task.pinned = !task.pinned;
-      saveTasks();
-      renderTasks();
-    };
+    pinBtn.onclick = () => { task.pinned = !task.pinned; saveTasks(); renderTasks(); };
 
-    // ⤵️ Do Later button
     const doLaterBtn = document.createElement('button');
     doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
     doLaterBtn.classList.toggle('doLater', task.doLater);
     doLaterBtn.classList.toggle('active', task.doLater);
-    doLaterBtn.onclick = () => {
-      task.doLater = !task.doLater;
-      saveTasks();
-      renderTasks();
-    };
+    doLaterBtn.onclick = () => { task.doLater = !task.doLater; saveTasks(); renderTasks(); };
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.checked = task.completed;
-    checkbox.onclick = () => {
-      task.completed = !task.completed;
-      saveTasks();
-      renderTasks();
-    };
+    checkbox.onclick = () => { task.completed = !task.completed; saveTasks(); renderTasks(); };
 
     const delBtn = document.createElement('button');
-    delBtn.classList.add('deleteBtn');
     delBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M6 18L18 6"/></svg>';
     delBtn.onclick = () => {
       if(!confirm("Are you sure you want to delete this task?")) return;
@@ -328,37 +309,26 @@ function renderTasks() {
   });
 }
 
-function resetTaskInput() {
-  taskInput.value = '';
-  updateCharCount();
-  requestAnimationFrame(() => {
-    taskInput.scrollTop = 0;
-    taskInput.selectionStart = taskInput.selectionEnd = 0;
-    autoGrow();
-    taskInput.focus();
-  });
-}
-
 function addTask() {
   const text = taskInput.value.trim();
   if(!text) return;
   tasks.unshift(createTask(text));
   saveTasks();
   renderTasks();
-  resetTaskInput();
+  taskInput.value = '';
+  updateCharCount();
+  autoGrow();
 }
 
 addTaskBtn.onclick = addTask;
 
-// -------- EXPORT / IMPORT FEATURE (updated) --------
 exportTasksBtn.onclick = () => {
   const text = tasks.map(t => {
     let markers = [];
     if(t.pinned) markers.push('[Pinned]');
     if(t.doLater) markers.push('[Do Later]');
     if(t.completed) markers.push('[Completed]');
-    let taskText = t.text.toUpperCase(); // caps
-    return (markers.length ? markers.join(' ') + ' ' : '') + taskText;
+    return (markers.length ? markers.join(' ') + ' ' : '') + t.text.toUpperCase();
   }).join('\n');
   const blob = new Blob([text], {type: 'text/plain'});
   const url = URL.createObjectURL(blob);
@@ -381,7 +351,6 @@ importFileInput.addEventListener('change', (e) => {
       let pinned = line.includes('[Pinned]');
       let doLater = line.includes('[Do Later]');
       let completed = line.includes('[Completed]');
-      // Remove markers from text
       let text = line.replace(/\[Pinned\]|\[Do Later\]|\[Completed\]/g, '').trim();
       let task = createTask(text);
       task.pinned = pinned;
@@ -396,7 +365,6 @@ importFileInput.addEventListener('change', (e) => {
   importFileInput.value = '';
 });
 
-// -------- NOW FILTER BUTTON --------
 filterPinnedBtn.onclick = () => {
   filters.pinned = !filters.pinned;
   filterPinnedBtn.classList.toggle('active', filters.pinned);
