@@ -64,6 +64,7 @@ body {
   gap: 6px;
   margin: 10px 0 6px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .toolbar button {
@@ -75,6 +76,10 @@ body {
   background: #4a3838;
   color: #fff;
   cursor: pointer;
+}
+
+.toolbar button.active {
+  background: #2563eb;
 }
 
 #taskList {
@@ -164,6 +169,9 @@ body {
   <button id="addTaskBtn">➕ Add</button>
   <button id="exportTasksBtn">⬆️ Export Tasks</button>
   <button id="importTasksBtn">⬇️ Import Tasks</button>
+  <button id="filterPinnedBtn">⭐ Pinned</button>
+  <button id="filterDoLaterBtn">⤵️ Do Later</button>
+  <button id="filterCompletedBtn">✔️ Completed</button>
   <input type="file" id="importFileInput" style="display:none;">
 </div>
 
@@ -182,7 +190,17 @@ const exportTasksBtn = document.getElementById('exportTasksBtn');
 const importTasksBtn = document.getElementById('importTasksBtn');
 const importFileInput = document.getElementById('importFileInput');
 
+const filterPinnedBtn = document.getElementById('filterPinnedBtn');
+const filterDoLaterBtn = document.getElementById('filterDoLaterBtn');
+const filterCompletedBtn = document.getElementById('filterCompletedBtn');
+
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+
+let filters = {
+  pinned: false,
+  doLater: false,
+  completed: false
+};
 
 function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -239,13 +257,21 @@ function createTask(text) {
 function renderTasks() {
   taskList.innerHTML = '';
 
-  const pinnedTasks = tasks.filter(t => t.pinned);
-  const normalTasks = tasks.filter(t => !t.pinned && !t.doLater);
-  const doLaterTasks = tasks.filter(t => t.doLater && !t.pinned);
+  let filteredTasks = [...tasks];
+  if(filters.pinned) filteredTasks = filteredTasks.filter(t => t.pinned);
+  if(filters.doLater) filteredTasks = filteredTasks.filter(t => t.doLater);
+  if(filters.completed) filteredTasks = filteredTasks.filter(t => t.completed);
 
-  const sortedTasks = [...pinnedTasks, ...normalTasks, ...doLaterTasks];
+  filteredTasks.sort((a,b) => {
+    // pinned first, then normal, then doLater
+    if(a.pinned && !b.pinned) return -1;
+    if(!a.pinned && b.pinned) return 1;
+    if(a.doLater && !b.doLater) return 1;
+    if(!a.doLater && b.doLater) return -1;
+    return b.createdAt - a.createdAt;
+  });
 
-  sortedTasks.forEach(task => {
+  filteredTasks.forEach(task => {
     const div = document.createElement('div');
     div.className = 'task-item';
     if(task.completed) div.classList.add('completed');
@@ -253,10 +279,16 @@ function renderTasks() {
     const span = document.createElement('span');
     span.className = 'task-text';
     let taskText = task.text;
-    if(task.pinned) taskText = taskText.toUpperCase();
     span.innerHTML = parseTagsHTML(taskText);
     span.style.fontWeight = task.pinned ? 'bold' : 'normal';
     span.style.textTransform = task.pinned ? 'uppercase' : 'none';
+
+    // Prepend markers
+    let markers = [];
+    if(task.pinned) markers.push('[Pinned]');
+    if(task.doLater) markers.push('[Do Later]');
+    if(task.completed) markers.push('[Completed]');
+    if(markers.length) span.innerHTML = markers.join(' ') + ' ' + span.innerHTML;
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
@@ -362,6 +394,25 @@ importFileInput.addEventListener('change', (e) => {
   reader.readAsText(file);
   importFileInput.value = '';
 });
+
+// -------- FILTER BUTTONS --------
+filterPinnedBtn.onclick = () => {
+  filters.pinned = !filters.pinned;
+  filterPinnedBtn.classList.toggle('active', filters.pinned);
+  renderTasks();
+};
+
+filterDoLaterBtn.onclick = () => {
+  filters.doLater = !filters.doLater;
+  filterDoLaterBtn.classList.toggle('active', filters.doLater);
+  renderTasks();
+};
+
+filterCompletedBtn.onclick = () => {
+  filters.completed = !filters.completed;
+  filterCompletedBtn.classList.toggle('active', filters.completed);
+  renderTasks();
+};
 
 renderTasks();
 updateCharCount();
