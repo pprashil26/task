@@ -213,9 +213,10 @@ taskInput.addEventListener('input', () => {
   autoGrow();
 });
 
-// Handle Enter and Shift+Enter
+// Enter saves task, Shift+Enter inserts line break
 taskInput.addEventListener('keydown', (e) => {
-  if(e.key === 'Enter' && !e.shiftKey) {
+  if(e.key === 'Enter') {
+    if(e.shiftKey) return; // insert line break
     e.preventDefault();
     addTask();
   }
@@ -235,13 +236,12 @@ function createTask(text) {
 
 function renderTasks() {
   taskList.innerHTML = '';
-  const sortedTasks = [...tasks].sort((a,b) => {
-    if(a.pinned && !b.pinned) return -1;
-    if(!a.pinned && b.pinned) return 1;
-    if(a.doLater && !b.doLater) return 1;
-    if(!a.doLater && b.doLater) return -1;
-    return b.createdAt - a.createdAt;
-  });
+
+  const pinnedTasks = tasks.filter(t => t.pinned);
+  const normalTasks = tasks.filter(t => !t.pinned && !t.doLater);
+  const doLaterTasks = tasks.filter(t => t.doLater && !t.pinned);
+
+  const sortedTasks = [...pinnedTasks, ...normalTasks, ...doLaterTasks];
 
   sortedTasks.forEach(task => {
     const div = document.createElement('div');
@@ -271,6 +271,7 @@ function renderTasks() {
     const doLaterBtn = document.createElement('button');
     doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4v16m0 0l-6-6m6 6l6-6"/></svg>';
     doLaterBtn.classList.toggle('doLater', task.doLater);
+    doLaterBtn.classList.toggle('active', task.doLater);
     doLaterBtn.onclick = () => {
       task.doLater = !task.doLater;
       saveTasks();
@@ -295,7 +296,7 @@ function renderTasks() {
       renderTasks();
     };
 
-    // Order: pin, doLater, checkbox, delete
+    // Order: pin → doLater → checkbox → delete
     controls.appendChild(pinBtn);
     controls.appendChild(doLaterBtn);
     controls.appendChild(checkbox);
