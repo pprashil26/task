@@ -150,7 +150,7 @@ body {
   fill: #fce77d;
 }
 
-.task-controls button.doLater svg {
+.task-controls button.doLater.active svg {
   fill: #7dd3fc;
 }
 </style>
@@ -182,13 +182,7 @@ function saveTasks() {
 }
 
 function escapeHTML(str) {
-  return str.replace(/[&<>"']/g, m => ({
-    '&':'&amp;',
-    '<':'&lt;',
-    '>':'&gt;',
-    '"':'&quot;',
-    "'":'&#39;'
-  }[m]));
+  return str.replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 }
 
 function parseTagsHTML(text) {
@@ -215,9 +209,9 @@ taskInput.addEventListener('input', () => {
   autoGrow();
 });
 
-// Enter / Shift+Enter behavior
-taskInput.addEventListener('keydown', e => {
-  if(e.key === 'Enter' && !e.shiftKey) {
+// Handle Enter and Shift+Enter
+taskInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     addTask();
   }
@@ -230,8 +224,6 @@ function createTask(text) {
     tags: (text.match(/#\w+/g) || []).map(t => t.trim()),
     completed: false,
     pinned: false,
-    bold: false,
-    caps: false,
     doLater: false,
     createdAt: Date.now()
   };
@@ -249,10 +241,10 @@ function renderTasks() {
     const span = document.createElement('span');
     span.className = 'task-text';
     let taskText = task.text;
-    if(task.pinned) task.bold = task.caps = true;  // enforce formatting
-    if(task.caps) taskText = taskText.toUpperCase();
+    if(task.pinned) taskText = taskText.toUpperCase();
     span.innerHTML = parseTagsHTML(taskText);
-    span.style.fontWeight = task.bold ? 'bold' : 'normal';
+    span.style.fontWeight = task.pinned ? 'bold' : 'normal';
+    span.style.textTransform = task.pinned ? 'uppercase' : 'none';
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
@@ -262,20 +254,19 @@ function renderTasks() {
     pinBtn.classList.toggle('pinned', task.pinned);
     pinBtn.onclick = () => {
       task.pinned = !task.pinned;
-      if(!task.pinned) { task.bold = task.caps = false; }
       saveTasks();
       renderTasks();
     };
 
     const doLaterBtn = document.createElement('button');
-    doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4L12 20M12 20L6 14M12 20L18 14"/></svg>';
+    doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4v16m0 0l-6-6m6 6l6-6"/></svg>';
     doLaterBtn.classList.toggle('doLater', task.doLater);
     doLaterBtn.onclick = () => {
       task.doLater = !task.doLater;
-      if(task.doLater) {
-        tasks = tasks.filter(t => t.id !== task.id);
-        tasks.push(task);
-      }
+      // move task to end if marked doLater
+      tasks = tasks.filter(t => t.id !== task.id);
+      if(task.doLater) tasks.push(task);
+      else tasks.unshift(task);
       saveTasks();
       renderTasks();
     };
