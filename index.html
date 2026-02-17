@@ -128,7 +128,6 @@ body {
 .task-controls button {
   border: none;
   background: transparent;
-  color: #fff;
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -145,16 +144,14 @@ body {
   pointer-events: none;
 }
 
-.task-controls button.pinned svg {
-  fill: #fce77d; /* keep pinned color as before */
-}
-
+.task-controls button.pinned svg,
 .task-controls button.doLater svg {
-  fill: #fff; /* default visible */
+  fill: #fff; /* default inactive color */
 }
 
+.task-controls button.pinned.active svg,
 .task-controls button.doLater.active svg {
-  fill: #7dd3fc; /* light blue when active */
+  fill: #7dd3fc; /* sky blue when active */
 }
 </style>
 </head>
@@ -258,15 +255,18 @@ function renderTasks() {
     const controls = document.createElement('div');
     controls.className = 'task-controls';
 
+    // Pinned button
     const pinBtn = document.createElement('button');
     pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
     pinBtn.classList.toggle('pinned', task.pinned);
+    pinBtn.classList.toggle('active', task.pinned);
     pinBtn.onclick = () => {
       task.pinned = !task.pinned;
       saveTasks();
       renderTasks();
     };
 
+    // Do Later button
     const doLaterBtn = document.createElement('button');
     doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4v16m0 0l-6-6m6 6l6-6"/></svg>';
     doLaterBtn.classList.toggle('doLater', task.doLater);
