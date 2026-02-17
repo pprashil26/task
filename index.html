@@ -57,24 +57,22 @@ body {
   margin-bottom: 6px;
 }
 
-/* -------- MINIMAL TOOLBAR -------- */
 .toolbar {
   width: 92%;
   max-width: 480px;
   display: flex;
-  gap: 8px;
-  margin: 6px 0;
+  gap: 6px;
+  margin: 10px 0 6px;
   align-items: center;
-  flex-wrap: nowrap;
 }
 
 .toolbar button {
-  padding: 2px 6px;       /* compact */
-  font-size: 11px;        /* small text */
-  font-weight: 400;       /* regular weight */
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 400; /* regular, not bold */
   text-transform: uppercase;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   background: #4a3838;
   color: #fff;
   cursor: pointer;
@@ -138,7 +136,7 @@ body {
   justify-content: center;
   align-items: center;
   padding: 0;
-  color: #ffffff;
+  color: #ffffff; /* default white */
 }
 
 .task-controls button svg {
@@ -168,12 +166,12 @@ body {
 <div id="charCount">160</div>
 
 <div class="toolbar">
-  <button id="addTaskBtn">ADD</button>
-  <button id="exportTasksBtn">EXPORT</button>
-  <button id="importTasksBtn">IMPORT</button>
-  <button id="filterPinnedBtn">PINNED</button>
-  <button id="filterDoLaterBtn">DO LATER</button>
-  <button id="filterCompletedBtn">COMPLETED</button>
+  <button id="addTaskBtn">Add</button>
+  <button id="exportTasksBtn">Export</button>
+  <button id="importTasksBtn">Import</button>
+  <button id="filterPinnedBtn">Pinned</button>
+  <button id="filterDoLaterBtn">Do Later</button>
+  <button id="filterCompletedBtn">Completed</button>
   <input type="file" id="importFileInput" style="display:none;">
 </div>
 
@@ -197,7 +195,12 @@ const filterDoLaterBtn = document.getElementById('filterDoLaterBtn');
 const filterCompletedBtn = document.getElementById('filterCompletedBtn');
 
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
-let filters = { pinned: false, doLater: false, completed: false };
+
+let filters = {
+  pinned: false,
+  doLater: false,
+  completed: false
+};
 
 function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -260,6 +263,7 @@ function renderTasks() {
   if(filters.completed) filteredTasks = filteredTasks.filter(t => t.completed);
 
   filteredTasks.sort((a,b) => {
+    // pinned first, then normal, then doLater
     if(a.pinned && !b.pinned) return -1;
     if(!a.pinned && b.pinned) return 1;
     if(a.doLater && !b.doLater) return 1;
@@ -279,13 +283,6 @@ function renderTasks() {
     span.style.fontWeight = task.pinned ? 'bold' : 'normal';
     span.style.textTransform = task.pinned ? 'uppercase' : 'none';
 
-    // Prepend markers
-    let markers = [];
-    if(task.pinned) markers.push('[Pinned]');
-    if(task.doLater) markers.push('[Do Later]');
-    if(task.completed) markers.push('[Completed]');
-    if(markers.length) span.innerHTML = markers.join(' ') + ' ' + span.innerHTML;
-
     const controls = document.createElement('div');
     controls.className = 'task-controls';
 
@@ -294,19 +291,31 @@ function renderTasks() {
     pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
     pinBtn.classList.toggle('pinned', task.pinned);
     pinBtn.classList.toggle('active', task.pinned);
-    pinBtn.onclick = () => { task.pinned = !task.pinned; saveTasks(); renderTasks(); };
+    pinBtn.onclick = () => {
+      task.pinned = !task.pinned;
+      saveTasks();
+      renderTasks();
+    };
 
     // ⤵️ Do Later button
     const doLaterBtn = document.createElement('button');
     doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
     doLaterBtn.classList.toggle('doLater', task.doLater);
     doLaterBtn.classList.toggle('active', task.doLater);
-    doLaterBtn.onclick = () => { task.doLater = !task.doLater; saveTasks(); renderTasks(); };
+    doLaterBtn.onclick = () => {
+      task.doLater = !task.doLater;
+      saveTasks();
+      renderTasks();
+    };
 
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.checked = task.completed;
-    checkbox.onclick = () => { task.completed = !task.completed; saveTasks(); renderTasks(); };
+    checkbox.onclick = () => {
+      task.completed = !task.completed;
+      saveTasks();
+      renderTasks();
+    };
 
     const delBtn = document.createElement('button');
     delBtn.classList.add('deleteBtn');
@@ -364,6 +373,7 @@ exportTasksBtn.onclick = () => {
 };
 
 importTasksBtn.onclick = () => importFileInput.click();
+
 importFileInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if(!file) return;
@@ -384,11 +394,13 @@ filterPinnedBtn.onclick = () => {
   filterPinnedBtn.classList.toggle('active', filters.pinned);
   renderTasks();
 };
+
 filterDoLaterBtn.onclick = () => {
   filters.doLater = !filters.doLater;
   filterDoLaterBtn.classList.toggle('active', filters.doLater);
   renderTasks();
 };
+
 filterCompletedBtn.onclick = () => {
   filters.completed = !filters.completed;
   filterCompletedBtn.classList.toggle('active', filters.completed);
