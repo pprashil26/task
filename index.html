@@ -149,6 +149,10 @@ body {
 .task-controls button.pinned svg {
   fill: #fce77d;
 }
+
+.task-controls button.doLater svg {
+  fill: #fce77d;
+}
 </style>
 </head>
 <body>
@@ -205,20 +209,6 @@ taskInput.addEventListener('input', () => {
   autoGrow();
 });
 
-// **Enter inserts line break**
-taskInput.addEventListener('keydown', e => {
-  if(e.key === 'Enter') {
-    e.stopPropagation();
-    e.preventDefault();
-    const start = taskInput.selectionStart;
-    const end = taskInput.selectionEnd;
-    taskInput.value = taskInput.value.substring(0, start) + "\n" + taskInput.value.substring(end);
-    taskInput.selectionStart = taskInput.selectionEnd = start + 1;
-    autoGrow();
-    updateCharCount();
-  }
-});
-
 function createTask(text) {
   return {
     id: Date.now(),
@@ -226,6 +216,9 @@ function createTask(text) {
     tags: (text.match(/#\w+/g) || []).map(t => t.trim()),
     completed: false,
     pinned: false,
+    doLater: false,
+    caps: false,
+    bold: false,
     createdAt: Date.now()
   };
 }
@@ -241,25 +234,44 @@ function renderTasks() {
 
     const span = document.createElement('span');
     span.className = 'task-text';
-    span.innerHTML = parseTagsHTML(task.text);
+    let taskText = task.text;
+
+    // Automatically make pinned tasks bold and caps
+    if(task.pinned) {
+      task.bold = true;
+      task.caps = true;
+    }
+
+    if(task.caps) taskText = taskText.toUpperCase();
+    span.innerHTML = parseTagsHTML(taskText);
+    span.style.fontWeight = task.bold ? 'bold' : 'normal';
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
-
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = task.completed;
-    checkbox.onclick = () => {
-      task.completed = !task.completed;
-      saveTasks();
-      renderTasks();
-    };
 
     const pinBtn = document.createElement('button');
     pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
     pinBtn.classList.toggle('pinned', task.pinned);
     pinBtn.onclick = () => {
       task.pinned = !task.pinned;
+      saveTasks();
+      renderTasks();
+    };
+
+    const doLaterBtn = document.createElement('button');
+    doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 21L12 3M12 21L6 15M12 21L18 15"></path></svg>';
+    doLaterBtn.classList.toggle('doLater', task.doLater);
+    doLaterBtn.onclick = () => {
+      task.doLater = !task.doLater;
+      saveTasks();
+      renderTasks();
+    };
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = task.completed;
+    checkbox.onclick = () => {
+      task.completed = !task.completed;
       saveTasks();
       renderTasks();
     };
@@ -274,8 +286,10 @@ function renderTasks() {
       renderTasks();
     };
 
-    controls.appendChild(checkbox);
+    // Order: pin, doLater, checkbox, delete
     controls.appendChild(pinBtn);
+    controls.appendChild(doLaterBtn);
+    controls.appendChild(checkbox);
     controls.appendChild(delBtn);
 
     div.appendChild(span);
@@ -305,6 +319,12 @@ function addTask() {
 }
 
 addTaskBtn.onclick = addTask;
+taskInput.addEventListener('keydown', e => { 
+  if(e.key === 'Enter' && !e.shiftKey) { 
+    e.preventDefault();
+    addTask();
+  }
+});
 
 renderTasks();
 updateCharCount();
