@@ -57,7 +57,7 @@ body {
   margin-bottom: 6px;
 }
 
-/* -------- COMPACT TOOLBAR -------- */
+/* -------- MINIMAL TOOLBAR -------- */
 .toolbar {
   width: 92%;
   max-width: 480px;
@@ -65,15 +65,16 @@ body {
   gap: 4px;
   margin: 6px 0;
   align-items: center;
-  flex-wrap: nowrap; /* single line */
+  flex-wrap: nowrap;
 }
 
 .toolbar button {
-  padding: 4px 8px; /* smaller padding */
-  font-size: 12px;  /* smaller font */
-  font-weight: 600;
+  padding: 2px 6px;       /* minimal padding */
+  font-size: 11px;         /* smaller font */
+  font-weight: 400;        /* normal, not bold */
+  text-transform: uppercase;
   border: none;
-  border-radius: 10px;
+  border-radius: 6px;
   background: #4a3838;
   color: #fff;
   cursor: pointer;
@@ -165,12 +166,12 @@ body {
 <div id="charCount">160</div>
 
 <div class="toolbar">
-  <button id="addTaskBtn">➕ Add</button>
-  <button id="exportTasksBtn">⬆️ Export</button>
-  <button id="importTasksBtn">⬇️ Import</button>
-  <button id="filterPinnedBtn">⭐ Pinned</button>
-  <button id="filterDoLaterBtn">⤵️ Do Later</button>
-  <button id="filterCompletedBtn">✔️ Completed</button>
+  <button id="addTaskBtn">ADD</button>
+  <button id="exportTasksBtn">EXPORT</button>
+  <button id="importTasksBtn">IMPORT</button>
+  <button id="filterPinnedBtn">PINNED</button>
+  <button id="filterDoLaterBtn">DO LATER</button>
+  <button id="filterCompletedBtn">COMPLETED</button>
   <input type="file" id="importFileInput" style="display:none;">
 </div>
 
@@ -195,11 +196,7 @@ const filterCompletedBtn = document.getElementById('filterCompletedBtn');
 
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 
-let filters = {
-  pinned: false,
-  doLater: false,
-  completed: false
-};
+let filters = { pinned: false, doLater: false, completed: false };
 
 function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -375,7 +372,6 @@ exportTasksBtn.onclick = () => {
 };
 
 importTasksBtn.onclick = () => importFileInput.click();
-
 importFileInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if(!file) return;
