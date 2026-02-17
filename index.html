@@ -148,10 +148,10 @@ body {
   fill: currentColor;
 }
 
-/* Active state for star + down arrow */
+/* Active state for star + do later */
 .task-controls button.pinned.active,
 .task-controls button.doLater.active {
-  color: #38bdf8; /* UPDATED brighter calm blue */
+  color: #38bdf8; /* brighter calm blue */
 }
 </style>
 </head>
@@ -162,6 +162,9 @@ body {
 
 <div class="toolbar">
   <button id="addTaskBtn">➕ Add</button>
+  <button id="exportTasksBtn">⬆️ Export Tasks</button>
+  <button id="importTasksBtn">⬇️ Import Tasks</button>
+  <input type="file" id="importFileInput" style="display:none;">
 </div>
 
 <div id="taskList"></div>
@@ -174,6 +177,10 @@ const charCount = document.getElementById('charCount');
 const addTaskBtn = document.getElementById('addTaskBtn');
 const taskList = document.getElementById('taskList');
 const mirror = document.getElementById('mirror');
+
+const exportTasksBtn = document.getElementById('exportTasksBtn');
+const importTasksBtn = document.getElementById('importTasksBtn');
+const importFileInput = document.getElementById('importFileInput');
 
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 
@@ -254,6 +261,7 @@ function renderTasks() {
     const controls = document.createElement('div');
     controls.className = 'task-controls';
 
+    // ⭐ Pinned button
     const pinBtn = document.createElement('button');
     pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
     pinBtn.classList.toggle('pinned', task.pinned);
@@ -264,12 +272,9 @@ function renderTasks() {
       renderTasks();
     };
 
+    // ⤵️ Do Later button
     const doLaterBtn = document.createElement('button');
-    doLaterBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <polyline points="6 13 12 19 18 13"></polyline>
-      </svg>`;
+    doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
     doLaterBtn.classList.toggle('doLater', task.doLater);
     doLaterBtn.classList.toggle('active', task.doLater);
     doLaterBtn.onclick = () => {
@@ -329,6 +334,34 @@ function addTask() {
 }
 
 addTaskBtn.onclick = addTask;
+
+// -------- EXPORT / IMPORT FEATURE --------
+exportTasksBtn.onclick = () => {
+  const text = tasks.map(t => t.text).join('\n');
+  const blob = new Blob([text], {type: 'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'tasks.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+importTasksBtn.onclick = () => importFileInput.click();
+
+importFileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const lines = reader.result.split('\n').map(l => l.trim()).filter(l => l);
+    lines.forEach(line => tasks.unshift(createTask(line)));
+    saveTasks();
+    renderTasks();
+  };
+  reader.readAsText(file);
+  importFileInput.value = '';
+});
 
 renderTasks();
 updateCharCount();
