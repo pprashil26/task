@@ -142,7 +142,6 @@ body {
 .task-controls button svg {
   width: 16px;
   height: 16px;
-  fill: #ccc;
   pointer-events: none;
 }
 
@@ -151,11 +150,11 @@ body {
 }
 
 .task-controls button.doLater svg {
-  fill: #ccc;
+  fill: #f0f0f0; /* visible by default */
 }
 
 .task-controls button.doLater.active svg {
-  fill: #7dd3fc;
+  fill: #7dd3fc; /* light blue when active */
 }
 </style>
 </head>
@@ -264,6 +263,7 @@ function renderTasks() {
     pinBtn.classList.toggle('pinned', task.pinned);
     pinBtn.onclick = () => {
       task.pinned = !task.pinned;
+      if(!task.pinned) task.doLater = false; // optional: unpin removes doLater
       saveTasks();
       renderTasks();
     };
