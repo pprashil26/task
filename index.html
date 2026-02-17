@@ -107,6 +107,7 @@ body {
   flex: 1;
   word-break: break-word;
   margin-right: 6px;
+  text-transform: uppercase; /* <-- ADDED for all CAPS */
 }
 
 .task-text .tag {
@@ -145,7 +146,6 @@ body {
   pointer-events: none;
 }
 
-/* Force icons to follow button color */
 .task-controls button svg path,
 .task-controls button svg line,
 .task-controls button svg polyline {
@@ -153,7 +153,6 @@ body {
   fill: currentColor;
 }
 
-/* Active state for pinned/do later */
 .task-controls button.pinned.active,
 .task-controls button.doLater.active {
   color: #38bdf8;
@@ -192,9 +191,7 @@ const filterPinnedBtn = document.getElementById('filterPinnedBtn');
 
 let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
 
-let filters = {
-  pinned: false
-};
+let filters = { pinned: false };
 
 function saveTasks() {
   localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -250,7 +247,6 @@ function createTask(text) {
 
 function renderTasks() {
   taskList.innerHTML = '';
-
   let filteredTasks = [...tasks];
   if(filters.pinned) filteredTasks = filteredTasks.filter(t => t.pinned);
 
@@ -269,12 +265,11 @@ function renderTasks() {
 
     const span = document.createElement('span');
     span.className = 'task-text';
-    span.innerHTML = parseTagsHTML(task.text);
+    span.innerHTML = parseTagsHTML(task.text); // will appear in all CAPS due to CSS
 
     const controls = document.createElement('div');
     controls.className = 'task-controls';
 
-    // ⭐ Pinned button
     const pinBtn = document.createElement('button');
     pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
     pinBtn.classList.toggle('pinned', task.pinned);
@@ -285,7 +280,6 @@ function renderTasks() {
       renderTasks();
     };
 
-    // ⤵️ Do Later button
     const doLaterBtn = document.createElement('button');
     doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
     doLaterBtn.classList.toggle('doLater', task.doLater);
@@ -348,7 +342,6 @@ function addTask() {
 
 addTaskBtn.onclick = addTask;
 
-// -------- EXPORT / IMPORT FEATURE --------
 exportTasksBtn.onclick = () => {
   const text = tasks.map(t => t.text).join('\n');
   const blob = new Blob([text], {type: 'text/plain'});
@@ -376,7 +369,6 @@ importFileInput.addEventListener('change', (e) => {
   importFileInput.value = '';
 });
 
-// -------- NOW FILTER BUTTON --------
 filterPinnedBtn.onclick = () => {
   filters.pinned = !filters.pinned;
   filterPinnedBtn.classList.toggle('active', filters.pinned);
