@@ -138,22 +138,23 @@ body {
   padding: 0;
 }
 
+/* SVG size */
 .task-controls button svg {
   width: 16px;
   height: 16px;
   pointer-events: none;
 }
 
-/* Button colors */
-.task-controls button.pinned svg,
-.task-controls button.doLater svg,
-.task-controls button.deleteBtn svg {
-  fill: #fff; /* default white for pinned, doLater, delete */
+/* ✅ FIXED COLOR SYSTEM (uses currentColor) */
+.task-controls button.pinned,
+.task-controls button.doLater,
+.task-controls button.deleteBtn {
+  color: #fff; /* default white */
 }
 
-.task-controls button.pinned.active svg,
-.task-controls button.doLater.active svg {
-  fill: #7dd3fc; /* sky blue when active */
+.task-controls button.pinned.active,
+.task-controls button.doLater.active {
+  color: #7dd3fc; /* sky blue when active */
 }
 </style>
 </head>
@@ -211,10 +212,9 @@ taskInput.addEventListener('input', () => {
   autoGrow();
 });
 
-// Enter saves task, Shift+Enter inserts line break
 taskInput.addEventListener('keydown', (e) => {
   if(e.key === 'Enter') {
-    if(e.shiftKey) return; // insert line break
+    if(e.shiftKey) return;
     e.preventDefault();
     addTask();
   }
@@ -257,7 +257,7 @@ function renderTasks() {
     const controls = document.createElement('div');
     controls.className = 'task-controls';
 
-    // Pinned button
+    // ⭐ Pinned button
     const pinBtn = document.createElement('button');
     pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
     pinBtn.classList.toggle('pinned', task.pinned);
@@ -268,9 +268,13 @@ function renderTasks() {
       renderTasks();
     };
 
-    // Do Later button
+    // ⬇️ Do Later button (FIXED SVG)
     const doLaterBtn = document.createElement('button');
-    doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4v16m0 0l-6-6m6 6l6-6"/></svg>';
+    doLaterBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <polyline points="6 13 12 19 18 13"></polyline>
+      </svg>`;
     doLaterBtn.classList.toggle('doLater', task.doLater);
     doLaterBtn.classList.toggle('active', task.doLater);
     doLaterBtn.onclick = () => {
@@ -298,7 +302,6 @@ function renderTasks() {
       renderTasks();
     };
 
-    // Order: pin → doLater → checkbox → delete
     controls.appendChild(pinBtn);
     controls.appendChild(doLaterBtn);
     controls.appendChild(checkbox);
