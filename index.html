@@ -40,7 +40,7 @@ body {
   white-space: pre-wrap;
   overflow-wrap: break-word;
   min-height: 32px;
-  text-transform: uppercase; /* all tasks in caps */
+  text-transform: uppercase;
 }
 
 #taskInput:focus {
@@ -79,7 +79,7 @@ body {
 }
 
 .toolbar button.active {
-  background: #2563eb !important; /* fixed specificity for NOW button */
+  background: #2563eb !important;
 }
 
 .toolbar input[type="text"] {
@@ -168,8 +168,7 @@ body {
   fill: currentColor;
 }
 
-.task-controls button.pinned.active,
-.task-controls button.doLater.active {
+.task-controls button.pinned.active {
   color: #38bdf8;
 }
 </style>
@@ -230,7 +229,7 @@ taskInput.addEventListener('input', () => { updateCharCount(); autoGrow(); });
 taskInput.addEventListener('keydown', (e) => { if(e.key==='Enter'){if(!e.shiftKey){e.preventDefault();addTask();}} });
 
 function createTask(text) {
-  return { id: Date.now(), text: text.trim(), tags: (text.match(/#\w+/g)||[]).map(t=>t.trim()), completed:false, pinned:false, doLater:false, createdAt:Date.now() };
+  return { id: Date.now(), text: text.trim(), tags: (text.match(/#\w+/g)||[]).map(t=>t.trim()), completed:false, pinned:false, createdAt:Date.now() };
 }
 
 function renderTasks() {
@@ -243,8 +242,6 @@ function renderTasks() {
   filteredTasks.sort((a,b) => {
     if(a.pinned&&!b.pinned) return -1;
     if(!a.pinned&&b.pinned) return 1;
-    if(a.doLater&&!b.doLater) return 1;
-    if(!a.doLater&&b.doLater) return -1;
     return b.createdAt - a.createdAt;
   });
 
@@ -271,12 +268,6 @@ function renderTasks() {
     pinBtn.classList.toggle('active', task.pinned);
     pinBtn.onclick = ()=>{task.pinned=!task.pinned;saveTasks();renderTasks();};
 
-    const doLaterBtn = document.createElement('button');
-    doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
-    doLaterBtn.classList.toggle('doLater', task.doLater);
-    doLaterBtn.classList.toggle('active', task.doLater);
-    doLaterBtn.onclick = ()=>{task.doLater=!task.doLater;saveTasks();renderTasks();};
-
     const checkbox = document.createElement('input');
     checkbox.type='checkbox';
     checkbox.checked = task.completed;
@@ -297,7 +288,6 @@ function renderTasks() {
     copyBtn.onclick = ()=>{navigator.clipboard.writeText(task.text.toUpperCase());};
 
     controls.appendChild(pinBtn);
-    controls.appendChild(doLaterBtn);
     controls.appendChild(checkbox);
     controls.appendChild(copyBtn);
     controls.appendChild(delBtn);
@@ -325,12 +315,11 @@ function addTask() {
 
 addTaskBtn.onclick=addTask;
 
-// -------- EXPORT / IMPORT FIXED --------
+// EXPORT / IMPORT
 exportTasksBtn.onclick=()=>{
   const text=tasks.map(t=>{
     let markers=[];
     if(t.pinned) markers.push('[Pinned]');
-    if(t.doLater) markers.push('[Do Later]');
     if(t.completed) markers.push('[Completed]');
     let taskText=t.text.toUpperCase();
     return (markers.length?markers.join(' ')+' ':'')+taskText;
@@ -351,11 +340,10 @@ importFileInput.addEventListener('change',(e)=>{
     const lines=reader.result.split('\n').map(l=>l.trim()).filter(l=>l);
     lines.forEach(line=>{
       let pinned=line.includes('[Pinned]');
-      let doLater=line.includes('[Do Later]');
       let completed=line.includes('[Completed]');
-      let text=line.replace(/\[Pinned\]|\[Do Later\]|\[Completed\]/g,'').trim();
+      let text=line.replace(/\[Pinned\]|\[Completed\]/g,'').trim();
       let task=createTask(text);
-      task.pinned=pinned; task.doLater=doLater; task.completed=completed;
+      task.pinned=pinned; task.completed=completed;
       tasks.unshift(task);
     });
     saveTasks();
@@ -364,14 +352,14 @@ importFileInput.addEventListener('change',(e)=>{
   reader.readAsText(file); importFileInput.value='';
 });
 
-// -------- FILTER PINNED --------
+// FILTER PINNED
 filterPinnedBtn.onclick=()=>{
   filters.pinned=!filters.pinned;
   filterPinnedBtn.classList.toggle('active',filters.pinned);
   renderTasks();
 };
 
-// -------- SEARCH --------
+// SEARCH
 searchInput.addEventListener('input',()=>{searchQuery=searchInput.value; renderTasks();});
 
 renderTasks();
