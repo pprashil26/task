@@ -151,7 +151,7 @@ body {
 }
 
 .task-controls button.doLater svg {
-  fill: #7dcffce6; /* light calm blue for "do later" */
+  fill: #7dd3fc;
 }
 </style>
 </head>
@@ -182,7 +182,13 @@ function saveTasks() {
 }
 
 function escapeHTML(str) {
-  return str.replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+  return str.replace(/[&<>"']/g, m => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[m]));
 }
 
 function parseTagsHTML(text) {
@@ -209,16 +215,11 @@ taskInput.addEventListener('input', () => {
   autoGrow();
 });
 
-// Prevent Enter from adding task, instead insert newline
+// Enter / Shift+Enter behavior
 taskInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
+  if(e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
-    const start = taskInput.selectionStart;
-    const end = taskInput.selectionEnd;
-    taskInput.value = taskInput.value.substring(0, start) + '\n' + taskInput.value.substring(end);
-    taskInput.selectionStart = taskInput.selectionEnd = start + 1;
-    autoGrow();
-    updateCharCount();
+    addTask();
   }
 });
 
@@ -229,9 +230,9 @@ function createTask(text) {
     tags: (text.match(/#\w+/g) || []).map(t => t.trim()),
     completed: false,
     pinned: false,
-    doLater: false,
     bold: false,
     caps: false,
+    doLater: false,
     createdAt: Date.now()
   };
 }
@@ -248,7 +249,7 @@ function renderTasks() {
     const span = document.createElement('span');
     span.className = 'task-text';
     let taskText = task.text;
-    if(task.pinned) task.bold = true, task.caps = true; // auto formatting for pinned
+    if(task.pinned) task.bold = task.caps = true;  // enforce formatting
     if(task.caps) taskText = taskText.toUpperCase();
     span.innerHTML = parseTagsHTML(taskText);
     span.style.fontWeight = task.bold ? 'bold' : 'normal';
@@ -256,29 +257,34 @@ function renderTasks() {
     const controls = document.createElement('div');
     controls.className = 'task-controls';
 
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = task.completed;
-    checkbox.onclick = () => {
-      task.completed = !task.completed;
-      saveTasks();
-      renderTasks();
-    };
-
     const pinBtn = document.createElement('button');
     pinBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z"></path></svg>';
     pinBtn.classList.toggle('pinned', task.pinned);
     pinBtn.onclick = () => {
       task.pinned = !task.pinned;
+      if(!task.pinned) { task.bold = task.caps = false; }
       saveTasks();
       renderTasks();
     };
 
     const doLaterBtn = document.createElement('button');
-    doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 21L12 3M12 21L18 15M12 21L6 15"></path></svg>';
+    doLaterBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 4L12 20M12 20L6 14M12 20L18 14"/></svg>';
     doLaterBtn.classList.toggle('doLater', task.doLater);
     doLaterBtn.onclick = () => {
       task.doLater = !task.doLater;
+      if(task.doLater) {
+        tasks = tasks.filter(t => t.id !== task.id);
+        tasks.push(task);
+      }
+      saveTasks();
+      renderTasks();
+    };
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = task.completed;
+    checkbox.onclick = () => {
+      task.completed = !task.completed;
       saveTasks();
       renderTasks();
     };
@@ -293,6 +299,7 @@ function renderTasks() {
       renderTasks();
     };
 
+    // Order: pin, doLater, checkbox, delete
     controls.appendChild(pinBtn);
     controls.appendChild(doLaterBtn);
     controls.appendChild(checkbox);
